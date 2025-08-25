@@ -1,7 +1,5 @@
 # Cofounder AI
 
-AI-powered co-founder matching and collaboration platform.
-
 ## Structure
 
 - `backend/` - Python API (Python 3.13)
