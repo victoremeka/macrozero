@@ -1,8 +1,11 @@
-# macrozero
+# Cofounder AI
 
-Multi-agent system that summarizes GitHub bugs, drafts PRs, reviews code, and recalls past fixes.
+## Structure
 
-## Setup
+- `backend/` - Python API (Python 3.13)
+- `frontend/` - Web interface (coming soon)
+
+## Quick Start
 
 ```bash
 cd backend
@@ -10,4 +13,6 @@ uv sync
 uv run python main.py
 ```
 
-**Requirements:** Python 3.13+
+## Requirements
+
+- Python 3.13+
