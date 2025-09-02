@@ -42,5 +42,53 @@ engine = get_db_engine()
 def create_db_and_tables():
     SQLModel.metadata.create_all(engine)
 
-if __name__ == "__main__":
+def add_review(repo_id: int, commit_id: int, review: str):
+    with Session(engine) as session:
+        session.add(
+            Review(
+                repo_id=repo_id,
+                commit_id=commit_id,
+                review=review
+            )
+        )
+        session.commit()
+    
+def add_commit(id: int, hash: str, message: str):
+    with Session(engine) as session:
+        session.add(
+            Commit(
+                id=id,
+                hash=hash,
+                message=message,
+            )
+        )
+        session.commit()
+
+def add_repository(id: int, name: str, owner: int):
+    with Session(engine) as session:
+        session.add(
+            Repository(
+                id=id,
+                name=name,
+                owner=owner,
+            )
+        )
+        session.commit()
+
+def add_user(id: int, name: str, email: str, org: str):
+    with Session(engine) as session:
+        session.add(
+            User(
+                id=id,
+                name=name,
+                email=email,
+                org=org
+            )
+        )
+        session.commit()
+
+def main():
     create_db_and_tables()
+
+if __name__ == "__main__":
+    main()
