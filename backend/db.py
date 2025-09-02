@@ -1,7 +1,8 @@
 import os
 import dotenv
-from sqlalchemy import create_engine, URL
-from sqlalchemy.orm import sessionmaker
+from sqlmodel import create_engine, Session
+from sqlalchemy.engine import URL
+from .models import *
 
 dotenv.load_dotenv()
 
@@ -12,7 +13,6 @@ db_database = os.getenv("DB_DATABASE")
 db_port = os.getenv("DB_PORT")
 if not db_port is None:
     db_port = int(db_port)
-    
 
 ca_path = os.path.abspath("isrgrootx1.pem")
 
@@ -30,12 +30,17 @@ def get_db_engine():
             username=db_username,
             password=db_password,
             host=db_host,
-            port=db_port,
+            port=db_port, # type: ignore
             database=db_database,
         ),
         connect_args=connect_args,
+        echo=True # reminder: take out in prod
     )
-
+ 
 engine = get_db_engine()
-session = sessionmaker(bind=engine)
 
+def create_db_and_tables():
+    SQLModel.metadata.create_all(engine)
+
+if __name__ == "__main__":
+    create_db_and_tables()
