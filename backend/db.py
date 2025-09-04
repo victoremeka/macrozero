@@ -1,6 +1,6 @@
 import os
 import dotenv
-from sqlmodel import create_engine, Session
+from sqlmodel import create_engine, Session, select
 from sqlalchemy.engine import URL
 from .models import *
 
@@ -86,6 +86,12 @@ def add_user(id: int, name: str, email: str, org: str):
             )
         )
         session.commit()
+
+def get_review(repo_id: int, commit_id:int):
+    with Session(engine) as session:
+        results = session.exec(select(Review).where(Review.repo_id == repo_id, Review.commit_id == commit_id))
+        return results
+
 
 def main():
     create_db_and_tables()
