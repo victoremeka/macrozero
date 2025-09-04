@@ -1,4 +1,4 @@
-from sqlmodel import Field, SQLModel, Relationship
+from sqlmodel import Field, SQLModel, Relationship, UniqueConstraint
 
 class Review(SQLModel, table=True):
     repo_id: int = Field(primary_key=True, foreign_key="repository.id")
@@ -18,6 +18,10 @@ class Commit(SQLModel, table=True):
     repository : "Repository" = Relationship(back_populates="commits")
     user : "User" = Relationship(back_populates="commits")
 
+    __table_args__ = (
+        UniqueConstraint("repo_id", "hash"),
+    )
+
 class RepositoryLink(SQLModel, table=True):
     repo_id : int = Field(primary_key=True, foreign_key="repository.id")
     user_id : int = Field(primary_key=True, foreign_key="user.id")
@@ -32,9 +36,8 @@ class Repository(SQLModel, table=True):
 class User(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     name: str
-    email: str
+    email: str = Field(unique=True)
     org: str | None = None
 
     commits : list[Commit] = Relationship(back_populates="user")
     repositories: list[Repository] = Relationship(back_populates="users", link_model=RepositoryLink)
-
