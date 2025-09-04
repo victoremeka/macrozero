@@ -53,12 +53,14 @@ def add_review(repo_id: int, commit_id: int, review: str):
         )
         session.commit()
     
-def add_commit(id: int, hash: str, message: str):
+def add_commit(id: int, hash: str, repo_id: int, owner_id: int, message: str):
     with Session(engine) as session:
         session.add(
             Commit(
                 id=id,
                 hash=hash,
+                repo_id=repo_id,
+                owner_id=owner_id,
                 message=message,
             )
         )
@@ -70,7 +72,6 @@ def add_repository(id: int, name: str, owner: int):
             Repository(
                 id=id,
                 name=name,
-                owner=owner,
             )
         )
         session.commit()
@@ -87,10 +88,10 @@ def add_user(id: int, name: str, email: str, org: str):
         )
         session.commit()
 
-def get_review(repo_id: int, commit_id:int):
+def get_review(repo_id: int, commit_id:int) -> Review | None:
     with Session(engine) as session:
-        results = session.exec(select(Review).where(Review.repo_id == repo_id, Review.commit_id == commit_id))
-        return results
+        result = session.get(Review, (repo_id, commit_id))
+        return result
 
 
 def main():
