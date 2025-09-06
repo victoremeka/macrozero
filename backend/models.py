@@ -68,7 +68,7 @@ class Commit(SQLModel, table=True):
     repo : Repository = Relationship(back_populates="commits")
     prs : list[PullRequest] = Relationship(back_populates="commits", link_model=CommitPullRequestLink)
     
-    __tablename__ = "git_commit"
+    __tablename__ = "git_commit" # type: ignore
     __table_args__ = (
         UniqueConstraint("repo_id", "sha", name="uq_commit_repo_sha"),
     )
