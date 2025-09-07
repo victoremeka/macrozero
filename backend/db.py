@@ -125,6 +125,18 @@ def upsert_issue(repo: Repository, number: int, state: IssueState, pr: PullReque
         session.commit()
         session.refresh(issue)
         return issue
+    
+def link_issue_file(issue: Issue, file_path: str, increment: int = 1) -> IssueFile:
+    with Session(engine) as session:
+        link = session.get(IssueFile, (issue.id, file_path))
+        if link:
+            link.touches = (link.touches or 0) + increment
+        else:
+            link = IssueFile(issue_id=issue.id, file_path=file_path, touches=increment)
+        session.add(link)
+        session.commit()
+        session.refresh(link)
+        return link
 
 
     
