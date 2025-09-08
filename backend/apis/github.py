@@ -3,6 +3,8 @@ import hmac, hashlib, time, requests, os
 import jwt
 import dotenv
 
+dotenv.load_dotenv()
+
 APP_ID = os.getenv("APP_ID")
 INSTALLATION_ID = os.getenv("INSTALLATION_ID")
 WEBHOOK_SECRET = os.getenv("WEBHOOK_SECRET")

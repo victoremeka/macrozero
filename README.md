@@ -7,7 +7,7 @@ Multi-agent system that summarizes GitHub bugs, drafts PRs, reviews code, and re
 ```bash
 cd backend
 uv sync
-uv run python main.py
+uv run uvicorn backend.server:app --reload
 ```
 
 **Requirements:** Python 3.13+
