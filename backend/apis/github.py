@@ -1,48 +1,32 @@
-import requests
+from fastapi import Request
+import hmac, hashlib, time, requests, os
+import jwt
+import dotenv
 
-# Personal Access Token (replace with your actual token)
-ACCESS_TOKEN = "YOUR_GITHUB_PERSONAL_ACCESS_TOKEN"
-USERNAME = "your_github_username"
-REPO_NAME = "your_repository_name"
+APP_ID = os.getenv("APP_ID")
+INSTALLATION_ID = os.getenv("INSTALLATION_ID")
+WEBHOOK_SECRET = os.getenv("WEBHOOK_SECRET")
+PRIVATE_KEY = open(os.getenv("PRIVATE_KEY_PATH")).read()
 
-# Example: Get a user's public repositories
-def get_user_repos(username):
-    url = f"https://api.github.com/users/{username}/repos"
-    headers = {
-        "Accept": "application/vnd.github.v3+json",
-        "Authorization": f"token {ACCESS_TOKEN}"  # For authenticated requests
-    }
-    response = requests.get(url, headers=headers)
-    if response.status_code == 200:
-        return response.json()
-    else:
-        print(f"Error: {response.status_code} - {response.text}")
-        return None
+def get_installation_token():
+    now = int(time.time())
+    payload = {"iat": now, "exp": now + 600, "iss": APP_ID}
+    jwt_token = jwt.encode(payload, PRIVATE_KEY, algorithm="RS256")
+    headers = {"Authorization": f"Bearer {jwt_token}", "Accept": "application/vnd.github+json"}
+    url = f"https://api.github.com/app/installations/{INSTALLATION_ID}/access_tokens"
+    return requests.post(url, headers=headers).json()["token"]
 
-# Example: Create a new repository (requires appropriate scopes on your token)
-def create_repo(repo_name, description=""):
-    url = "https://api.github.com/user/repos"
-    headers = {
-        "Accept": "application/vnd.github.v3+json",
-        "Authorization": f"token {ACCESS_TOKEN}"
-    }
-    data = {
-        "name": repo_name,
-        "description": description,
-        "private": False  # Set to True for private repository
-    }
-    response = requests.post(url, headers=headers, json=data)
-    if response.status_code == 201:
-        print(f"Repository '{repo_name}' created successfully.")
-        return response.json()
-    else:
-        print(f"Error creating repository: {response.status_code} - {response.text}")
-        return None
+async def handle_pull_request(request: Request):
+    body = await request.body()
+    sig = "sha256=" + hmac.new(WEBHOOK_SECRET.encode(), body, hashlib.sha256).hexdigest()
+    if not hmac.compare_digest(request.headers["X-Hub-Signature-256"], sig):
+        return {"error": "invalid signature"}
 
-# Usage example
-# repos = get_user_repos(USERNAME)
-# if repos:
-#     for repo in repos:
-#         print(repo['name'])
+    event = request.headers["X-GitHub-Event"]
+    payload = await request.json()
 
-# create_repo("my-new-repo", "A repository created via GitHub API in Python.")
+    if event == "pull_request" and payload.get("action") in {"opened", "reopened"}:
+        token = get_installation_token()
+        headers = {"Authorization": f"token {token}", "Accept": "application/vnd.github+json"}
+        comment_url = payload["pull_request"]["comments_url"]
+        requests.post(comment_url, headers=headers, json={"body": "👋 Agent saw this PR!"})
