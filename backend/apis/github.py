@@ -18,7 +18,7 @@ def get_installation_token():
     url = f"https://api.github.com/app/installations/{INSTALLATION_ID}/access_tokens"
     return requests.post(url, headers=headers).json()["token"]
 
-async def handle_pull_request(request: Request):
+async def handle_webhook_pull_request(request: Request):
     body = await request.body()
     sig = "sha256=" + hmac.new(WEBHOOK_SECRET.encode(), body, hashlib.sha256).hexdigest()
     if not hmac.compare_digest(request.headers["X-Hub-Signature-256"], sig):
