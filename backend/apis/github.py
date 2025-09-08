@@ -8,7 +8,8 @@ dotenv.load_dotenv()
 APP_ID = os.getenv("APP_ID")
 INSTALLATION_ID = os.getenv("INSTALLATION_ID")
 WEBHOOK_SECRET = os.getenv("WEBHOOK_SECRET")
-PRIVATE_KEY = open(os.getenv("PRIVATE_KEY_PATH")).read()
+with open(os.getenv("PRIVATE_KEY_PATH")) as f:
+    PRIVATE_KEY = f.read()
 
 def get_installation_token():
     now = int(time.time())
