@@ -1,8 +1,6 @@
 from fastapi import FastAPI, Request
 from .apis.github import *
 
-dotenv.load_dotenv()
-
 app = FastAPI()
 
 
