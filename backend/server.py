@@ -1,10 +1,8 @@
 from fastapi import FastAPI, Request
-from .apis.github import *
+from apis.github import *
 
 app = FastAPI()
 
-
-
 @app.post("/webhook")
 async def webhook(request: Request):
-    await handle_pull_request(request)
+    await handle_webhook_pull_request(request)

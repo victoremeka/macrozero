@@ -2,7 +2,7 @@ import os
 import dotenv
 from sqlmodel import create_engine, Session, select
 from sqlalchemy.engine import URL
-from .models import *
+from models import *
 
 dotenv.load_dotenv()
 
