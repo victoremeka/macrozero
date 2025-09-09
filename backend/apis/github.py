@@ -1,6 +1,9 @@
 import os, time, hmac, hashlib, requests, jwt, json
 from typing import Any, Dict, Iterable, List, Optional
 from fastapi import HTTPException, Request
+import dotenv
+
+dotenv.load_dotenv()
 
 # ENV (keep names you already use)
 APP_ID = os.getenv("GITHUB_APP_ID")
@@ -173,7 +176,10 @@ def update_check_run(owner: str, repo: str, check_run_id: int, conclusion: str, 
 # Webhook handler
 async def handle_webhook_pull_request(request: Request):
     raw = await request.body()
-    verify_signature(raw, request.headers.get("X-Hub-Signature-256"))
+    try:
+        verify_signature(raw, request.headers.get("X-Hub-Signature-256"))
+    except HTTPException as e:
+        raise
     event = request.headers.get("X-GitHub-Event")
     if event != "pull_request":
         return {"ignored": event}
