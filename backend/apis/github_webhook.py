@@ -1,7 +1,7 @@
 import hmac, hashlib
 from fastapi import HTTPException, Request
 
-from integrations.github_client import *
+from integrations.github_client import (comment_on_pr, WEBHOOK_SECRET)
 
 # Webhook verification
 def verify_signature(raw: bytes, sig_header: str | None):

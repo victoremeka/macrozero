@@ -1,8 +1,19 @@
 import os
 import dotenv
-from sqlmodel import create_engine, Session, select
+from datetime import datetime, timezone
+from sqlmodel import create_engine, SQLModel, Session, select
 from sqlalchemy.engine import URL
-from models import *
+from models import (
+    PRState,
+    IssueState,
+    Repository,
+    CommitPullRequestLink,
+    PullRequest,
+    Commit,
+    Review,
+    Issue,
+    IssueFile
+)
 
 dotenv.load_dotenv()
 
@@ -70,6 +81,20 @@ def upsert_pr(repo: Repository, number: int, state: PRState, text: str, embeddin
         session.refresh(pr)
         return pr
 
+def upsert_review(pr: PullRequest, comment_id: str, comment_text: str, author_login: str | None = None):
+    with Session(engine) as session:
+        review = session.exec(select(Review).where(Review.pr_id == pr.id, Review.comment_id == comment_id)).one_or_none()
+
+        if review:
+            review.comment_text = comment_text
+            review.author_login = author_login
+
+        session.add(review)
+        session.commit()
+        session.refresh(review)
+        
+        return review
+
 def upsert_commit(
     repo: Repository,
     sha: str,
@@ -110,6 +135,11 @@ def link_commit_to_pr(commit: Commit, pr: PullRequest) -> None:
             session.add(CommitPullRequestLink(commit_id=commit.id, pr_id=pr.id))
             session.commit()
 
+def get_issue(repo: Repository, number: int) -> Issue | None:
+    with Session(engine) as session:
+        issue = session.exec(select(Issue).where(Issue.repo_id == repo.id, Issue.number == number)).one_or_none()
+        return issue
+
 def upsert_issue(repo: Repository, number: int, state: IssueState, pr: PullRequest | None = None) -> Issue:
     with Session(engine) as session:
         issue = session.exec(select(Issue).where(Issue.repo_id == repo.id, Issue.number == number)).one_or_none()
@@ -138,7 +168,7 @@ def link_issue_file(issue: Issue, file_path: str, increment: int = 1) -> IssueFi
         session.refresh(link)
         return link
 
-
+#TODO: Add helper for review upserts
     
 if __name__ == "__main__":
     create_db_and_tables()

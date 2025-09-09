@@ -1,5 +1,7 @@
 from fastapi import FastAPI, Request
-from apis.github_webhook import *
+from apis.github_webhook import (
+    handle_webhook_pull_request
+)
 
 app = FastAPI()
 

@@ -81,6 +81,8 @@ class Review(SQLModel, table=True):
     author_login : str | None = Field(default=None, index=True)
     created_at : datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
+    #TODO: Fix Review model; link to PR model. Include embeddings.
+
     __table_args__ = (
         UniqueConstraint("pr_id", "comment_id", name="uq_review_pr_comment"),
     )
