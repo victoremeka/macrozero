@@ -323,13 +323,13 @@ def get_pull_request(owner: str, repo: str, number: int):
     """
     return gh_json("GET", f"/repos/{owner}/{repo}/pulls/{number}")
 
-def list_pr_commits(owner: str, repo: str, number: int):
+def list_pr_commits(owner: str, repo_name: str, number: int):
     """
     List all commits in a pull request.
 
     Args:
         owner: Repository owner (username or organization name)
-        repo: Repository name
+        repo_name: Repository name
         number: Pull request number
 
     Returns:
@@ -340,7 +340,7 @@ def list_pr_commits(owner: str, repo: str, number: int):
         for commit in commits:
             print(f"{commit['sha'][:7]}: {commit['commit']['message']}")
     """
-    return list(paginate(f"/repos/{owner}/{repo}/pulls/{number}/commits"))
+    return list(paginate(f"/repos/{owner}/{repo_name}/pulls/{number}/commits"))
 
 def list_pr_files(owner: str, repo: str, number: int):
     """
