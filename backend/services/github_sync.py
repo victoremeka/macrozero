@@ -18,6 +18,37 @@ from db import (
 )
 session = get_session()
 
+def add_pr_commits_to_db(repo: Repository, repo_name: str, owner: str, number: int,):
+    model = lms.embedding_model("nomic-embed-text-v1.5")
+
+    commits = list_pr_commits(
+        repo_name=repo_name,
+        owner=owner,
+        number=number
+    )
+    
+
+    for commit in commits:
+        msg=commit["commit"]["message"]
+
+        out = [f"Commit: {commit.get('sha','')}", f"Message: {msg}"]
+        for f in commit.get("files", []):
+            if "patch" not in f:
+                continue
+            lines = [l for l in f["patch"].splitlines() if not l.startswith("@@")]
+            out.append(f"\nFile: {f['filename']}\n" + "\n".join(lines))
+        out = "\n".join(out)
+
+        commit = upsert_commit(
+            session=session,
+            repo=repo,
+            sha=commit["sha"],
+            message=msg,
+            author_login=commit["author"]["login"],
+            diff_embedding=model.embed(out), # type: ignore
+        )
+
+
 def handle_pull_request(payload: dict):
     action = payload.get("action")
    
@@ -27,6 +58,8 @@ def handle_pull_request(payload: dict):
         repo_name = pr["base"]["repo"]["name"]
         repo_id = pr["base"]["repo"]["id"]
         number = pr["number"]
+        head_branch = pr["head"]["ref"]
+        base_branch = pr["base"]["ref"]
         if pr.get("body"):
             text = pr["title"] + " ".join(re.split(r"\n|\r", pr["body"].strip()))
         else:
@@ -35,7 +68,6 @@ def handle_pull_request(payload: dict):
 
         model = lms.embedding_model("nomic-embed-text-v1.5")
         embedding = model.embed(text)
-
         try:
             # Activate Agent Orchestrator
             repo = upsert_repo(
@@ -43,22 +75,33 @@ def handle_pull_request(payload: dict):
                 gh_id=repo_id,
                 owner=repo_owner,
             )
-            upsert_pr(
+            pullrequest = upsert_pr(
                 session=session,
                 repo=repo,
                 number=number,
                 state=state,
                 text=text,
-                embedding=embedding,
+                embedding=embedding, # type: ignore
+                head_branch=head_branch,
+                base_branch=base_branch,
             )
+            add_pr_commits_to_db(repo, repo_name, repo_owner, number)
             session.commit()
             session.close()
-            comment_on_pr(repo_owner, repo_name, number, "👋 Automation acknowledged this pull request.")
 
         except SQLAlchemyError as e:
             print("Database error:", e)
 
     return {"status": "ok", "action": action}
+
+def handle_pull_request_review(payload: dict):
+    pass
+
+def handle_pull_request_review_comment(payload: dict):
+    pass
+
+def handle_pull_request_review_thread(payload: dict):
+    pass
 
 def handle_issue(payload : dict):
     action = payload.get("action")

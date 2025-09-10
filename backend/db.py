@@ -69,14 +69,17 @@ def upsert_repo(session: Session, gh_id: int, owner: str) -> Repository:
     session.refresh(repo)
     return repo
     
-def upsert_pr(session: Session, repo: Repository, number: int, state: PRState, text: str, embedding: list[float]) -> PullRequest:
+def upsert_pr(session: Session, repo: Repository, number: int, state: PRState, text: str, embedding: list[float], head_branch: str, base_branch: str) -> PullRequest:
     pr = session.exec(select(PullRequest).where(PullRequest.repo_id == repo.id, PullRequest.number == number)).one_or_none()
     if pr:
         pr.state = state
         pr.text = text
         pr.embedding = embedding
+        pr.head_branch = head_branch
+        pr.base_branch = base_branch
+        
     else:
-        pr = PullRequest(repo_id=repo.id, number=number, state=state, text=text, embedding=embedding)
+        pr = PullRequest(repo_id=repo.id, number=number, state=state, text=text, embedding=embedding, head_branch=head_branch, base_branch=base_branch)
     
     session.add(pr)
     session.flush()
@@ -102,7 +105,6 @@ def upsert_commit(
     sha: str,
     message: str,
     author_login: str | None,
-    diff_text_raw: str,
     diff_embedding: list[float],
 ) -> Commit:
     c = session.exec(
@@ -111,7 +113,6 @@ def upsert_commit(
     if c:
         c.message = message
         c.author_login = author_login
-        c.diff_text_raw = diff_text_raw
         c.diff_text_embedding = diff_embedding
     else:
         c = Commit(
@@ -120,7 +121,6 @@ def upsert_commit(
             message=message,
             author_login=author_login,
             created_at=datetime.now(timezone.utc),
-            diff_text_raw=diff_text_raw,
             diff_text_embedding=diff_embedding,
         )
     session.add(c)
