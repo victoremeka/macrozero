@@ -1,6 +1,5 @@
 import hmac, hashlib
 from fastapi import HTTPException, Request
-import json
 from integrations.github_client import (comment_on_pr, WEBHOOK_SECRET)
 from services.github_sync import *
 
@@ -46,34 +45,12 @@ async def handle_webhook_payload(request: Request):
     except HTTPException as e:
         raise
     event = request.headers.get("X-GitHub-Event")
+    payload : dict = await request.json()
+
     if event == "pull_request":
-        payload : dict = await request.json()
-        action = payload.get("action")
-
-        if action in {"opened", "reopened", "synchronize"}:
-            pr = payload["pull_request"]
-            owner = pr["base"]["repo"]["owner"]["login"]
-            repo = pr["base"]["repo"]["name"]
-            number = pr["number"]
-            state = PRState.OPEN
-
-            with open("test/webhook_pr_response.json", "w") as file:
-                json.dump(payload, file, indent=2)
-
-            try:
-                # Activate Agent Orchestrator
-                comment_on_pr(owner, repo, number, "👋 Automation acknowledged this pull request.")
-
-            except Exception as e:
-                return {"status": "error", "detail": str(e)}
-        return {"status": "ok", "action": action}
+        handle_pull_request(payload=payload)
     elif event == "issues":
-        payload : dict = await request.json()
-        action = payload.get("action")
-
-        if action in {"opened", "reopened"}:
-            # Activate Agent Orchestrator
-            pass
+        handle_issue(payload=payload)
     else:
         return {"ignored": event}
     

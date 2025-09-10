@@ -4,7 +4,7 @@ from sqlmodel import Field, SQLModel, Relationship
 from sqlalchemy import Column, Enum, UniqueConstraint
 from tidb_vector.sqlalchemy import VectorType
 
-EMBED_DIM = 1536
+EMBED_DIM = 768
 
 class PRState(enum.Enum):
     OPEN = "open" or "reopened"

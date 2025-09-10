@@ -45,7 +45,8 @@ def get_db_engine():
             database=db_database,
         ),
         connect_args=connect_args,
-        echo=True # reminder: take out in prod
+        echo=True, # reminder: take out in prod
+        future=True
     )
 
 engine = get_db_engine()
@@ -53,49 +54,50 @@ engine = get_db_engine()
 def create_db_and_tables():
     SQLModel.metadata.create_all(engine)
 
-def upsert_repo(gh_id: int, owner: str) -> Repository:
-    with Session(engine) as session:
-        repo = session.exec(select(Repository).where(Repository.gh_id == gh_id)).one_or_none()
-        if repo:
-            repo.owner = owner
-        else:
-            repo =  Repository(owner=owner,gh_id=gh_id)
-        
-        session.add(repo)
-        session.commit()
-        session.refresh(repo)
-        return repo
+def get_session() -> Session:
+    return Session(engine)
+
+def upsert_repo(session: Session, gh_id: int, owner: str) -> Repository:
+    repo = session.exec(select(Repository).where(Repository.gh_id == gh_id)).one_or_none()
+    if repo:
+        repo.owner = owner
+    else:
+        repo =  Repository(owner=owner,gh_id=gh_id)
     
-def upsert_pr(repo: Repository, number: int, state: PRState, text: str, embedding: list[float]) -> PullRequest:
-    with Session(engine) as session:
-        pr = session.exec(select(PullRequest).where(PullRequest.repo_id == repo.id, PullRequest.number == number)).one_or_none()
-        if pr:
-            pr.state = state
-            pr.text = text
-            pr.embedding = embedding
-        else:
-            pr = PullRequest(repo_id=repo.id, number=number, state=state, text=text, embedding=embedding)
-        
-        session.add(pr)
-        session.commit()
-        session.refresh(pr)
-        return pr
+    session.add(repo)
+    session.flush()
+    session.refresh(repo)
+    return repo
+    
+def upsert_pr(session: Session, repo: Repository, number: int, state: PRState, text: str, embedding: list[float]) -> PullRequest:
+    pr = session.exec(select(PullRequest).where(PullRequest.repo_id == repo.id, PullRequest.number == number)).one_or_none()
+    if pr:
+        pr.state = state
+        pr.text = text
+        pr.embedding = embedding
+    else:
+        pr = PullRequest(repo_id=repo.id, number=number, state=state, text=text, embedding=embedding)
+    
+    session.add(pr)
+    session.flush()
+    session.refresh(pr)
+    return pr
 
-def upsert_review(pr: PullRequest, comment_id: str, comment_text: str, author_login: str | None = None):
-    with Session(engine) as session:
-        review = session.exec(select(Review).where(Review.pr_id == pr.id, Review.comment_id == comment_id)).one_or_none()
+def upsert_review(session: Session, pr: PullRequest, comment_id: str, comment_text: str, author_login: str | None = None):
+    review = session.exec(select(Review).where(Review.pr_id == pr.id, Review.comment_id == comment_id)).one_or_none()
 
-        if review:
-            review.comment_text = comment_text
-            review.author_login = author_login
+    if review:
+        review.comment_text = comment_text
+        review.author_login = author_login
 
-        session.add(review)
-        session.commit()
-        session.refresh(review)
-        
-        return review
+    session.add(review)
+    session.flush()
+    session.refresh(review)
+    
+    return review
 
 def upsert_commit(
+    session: Session,
     repo: Repository,
     sha: str,
     message: str,
@@ -103,72 +105,64 @@ def upsert_commit(
     diff_text_raw: str,
     diff_embedding: list[float],
 ) -> Commit:
-    with Session(engine) as session:
-        c = session.exec(
-        select(Commit).where(Commit.repo_id == repo.id, Commit.sha == sha)
-        ).one_or_none()
-        if c:
-            c.message = message
-            c.author_login = author_login
-            c.diff_text_raw = diff_text_raw
-            c.diff_text_embedding = diff_embedding
-        else:
-            c = Commit(
-                repo_id=repo.id,
-                sha=sha,
-                message=message,
-                author_login=author_login,
-                created_at=datetime.now(timezone.utc),
-                diff_text_raw=diff_text_raw,
-                diff_text_embedding=diff_embedding,
-            )
-        session.add(c)
-        session.commit()
-        session.refresh(c)
-        return c
+    c = session.exec(
+    select(Commit).where(Commit.repo_id == repo.id, Commit.sha == sha)
+    ).one_or_none()
+    if c:
+        c.message = message
+        c.author_login = author_login
+        c.diff_text_raw = diff_text_raw
+        c.diff_text_embedding = diff_embedding
+    else:
+        c = Commit(
+            repo_id=repo.id,
+            sha=sha,
+            message=message,
+            author_login=author_login,
+            created_at=datetime.now(timezone.utc),
+            diff_text_raw=diff_text_raw,
+            diff_text_embedding=diff_embedding,
+        )
+    session.add(c)
+    session.flush()
+    session.refresh(c)
+    return c
 
-def link_commit_to_pr(commit: Commit, pr: PullRequest) -> None:
-    with Session(engine) as session:
+def link_commit_to_pr(session: Session, commit: Commit, pr: PullRequest) -> None:
+    session.flush()
+    link = session.get(CommitPullRequestLink, (commit.id, pr.id))
+    if not link:
+        session.add(CommitPullRequestLink(commit_id=commit.id, pr_id=pr.id))
         session.flush()
-        link = session.get(CommitPullRequestLink, (commit.id, pr.id))
-        if not link:
-            session.add(CommitPullRequestLink(commit_id=commit.id, pr_id=pr.id))
-            session.commit()
 
-def get_issue(repo: Repository, number: int) -> Issue | None:
-    with Session(engine) as session:
-        issue = session.exec(select(Issue).where(Issue.repo_id == repo.id, Issue.number == number)).one_or_none()
-        return issue
+def get_issue(session: Session, repo: Repository, number: int) -> Issue | None:
+    issue = session.exec(select(Issue).where(Issue.repo_id == repo.id, Issue.number == number)).one_or_none()
+    return issue
 
-def upsert_issue(repo: Repository, number: int, state: IssueState, pr: PullRequest | None = None) -> Issue:
-    with Session(engine) as session:
-        issue = session.exec(select(Issue).where(Issue.repo_id == repo.id, Issue.number == number)).one_or_none()
-        if issue:
-            issue.state = state
-        else:
-            issue = Issue(
-                repo_id=repo.id,
-                number=number,
-                state=state,
-            )
-        session.add(issue)
-        session.commit()
-        session.refresh(issue)
-        return issue
+def upsert_issue(session: Session, repo: Repository, number: int, state: IssueState, pr: PullRequest | None = None) -> Issue:
+    issue = session.exec(select(Issue).where(Issue.repo_id == repo.id, Issue.number == number)).one_or_none()
+    if issue:
+        issue.state = state
+    else:
+        issue = Issue(
+            repo_id=repo.id,
+            number=number,
+            state=state,
+        )
+    session.add(issue)
+    session.flush()
+    session.refresh(issue)
+    return issue
     
-def link_issue_file(issue: Issue, file_path: str, increment: int = 1) -> IssueFile:
-    with Session(engine) as session:
-        link = session.get(IssueFile, (issue.id, file_path))
-        if link:
-            link.touches = (link.touches or 0) + increment
-        else:
-            link = IssueFile(issue_id=issue.id, file_path=file_path, touches=increment)
-        session.add(link)
-        session.commit()
-        session.refresh(link)
-        return link
+def link_issue_file(session: Session, issue: Issue, file_path: str, increment: int = 1) -> IssueFile:
+    link = session.get(IssueFile, (issue.id, file_path))
+    if link:
+        link.touches = (link.touches or 0) + increment
+    else:
+        link = IssueFile(issue_id=issue.id, file_path=file_path, touches=increment)
+    session.add(link)
+    session.flush()
+    session.refresh(link)
+    return link
 
 #TODO: Add helper for review upserts
-    
-if __name__ == "__main__":
-    create_db_and_tables()
