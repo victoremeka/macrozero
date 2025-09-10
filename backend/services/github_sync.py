@@ -1,4 +1,5 @@
 from integrations.github_client import *
+from models import *
 from db import (
     upsert_repo,
     upsert_pr,
@@ -8,5 +9,8 @@ from db import (
     link_issue_file,
 )
 
+def handle_pull_request():
+    pass
 
-
+def handle_issue():
+    pass

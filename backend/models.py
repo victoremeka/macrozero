@@ -7,7 +7,7 @@ from tidb_vector.sqlalchemy import VectorType
 EMBED_DIM = 1536
 
 class PRState(enum.Enum):
-    OPEN = "open"
+    OPEN = "open" or "reopened"
     CLOSED = "closed"
     MERGED = "merged"
 
