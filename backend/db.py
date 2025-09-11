@@ -151,15 +151,17 @@ def get_issue(session: Session, repo: Repository, number: int) -> Issue | None:
     issue = session.exec(select(Issue).where(Issue.repo_id == repo.id, Issue.number == number)).one_or_none()
     return issue
 
-def upsert_issue(session: Session, repo: Repository, number: int, state: IssueState, pr: PullRequest | None = None) -> Issue:
+def upsert_issue(session: Session, repo: Repository, number: int, state: IssueState, content_embedding: list[float], pr: PullRequest | None = None) -> Issue:
     issue = session.exec(select(Issue).where(Issue.repo_id == repo.id, Issue.number == number)).one_or_none()
     if issue:
         issue.state = state
+        issue.content_embedding = content_embedding
     else:
         issue = Issue(
             repo_id=repo.id,
             number=number,
             state=state,
+            content_embedding=content_embedding
         )
     session.add(issue)
     session.flush()

@@ -18,15 +18,13 @@ from db import (
     link_commit_to_pr,
     link_issue_file,
 )
-
+model = lms.embedding_model("nomic-embed-text-v1.5") # TODO take out in prod
 
 def dump_to_json(name, data):
     with open(f"test/{name}.json", "w") as f:
         json.dump(data, f, indent=2)
 
 def add_pr_commits_to_db(pr: PullRequest, repo: Repository, repo_name: str, owner: str, number: int, session: Session):
-    model = lms.embedding_model("nomic-embed-text-v1.5")
-
     commits = list_pr_commits(
         repo_name=repo_name,
         owner=owner,
@@ -58,12 +56,11 @@ def add_pr_commits_to_db(pr: PullRequest, repo: Repository, repo_name: str, owne
             pr=pr
         )
 
-def handle_pull_request(payload: dict, session: Session):
+def handle_pull_request(payload: dict, session: Session, repo: Repository):
     action = payload.get("action")
     pr : dict = payload["pull_request"]
     repo_owner = pr["base"]["repo"]["owner"]["login"]
     repo_name = pr["base"]["repo"]["name"]
-    repo_id = pr["base"]["repo"]["id"]
     number = pr["number"]
     head_branch = pr["head"]["ref"]
     base_branch = pr["base"]["ref"]
@@ -75,12 +72,6 @@ def handle_pull_request(payload: dict, session: Session):
     
     model = lms.embedding_model("nomic-embed-text-v1.5")
     embedding = model.embed(text)
-
-    repo = upsert_repo(
-        session=session,
-        gh_id=repo_id,
-        owner=repo_owner,
-    )
 
     if action in {"opened", "reopened", "synchronize"}:
         state = PRState.OPEN
@@ -132,15 +123,13 @@ def handle_pull_request(payload: dict, session: Session):
     # TODO: Activate Agent Orchestrator
     return {"status": "ok", "action": action}
 
-def handle_pull_request_review(payload: dict, session: Session):
+def handle_pull_request_review(payload: dict, session: Session, repo: Repository):
     action = payload.get("action")
     review = payload["review"]
-    repo = payload["repository"]
 
     pr_number = payload["pull_request"]["number"]
 
-    repo_db = session.exec(select(Repository).where(Repository.gh_id == repo["id"])).one()
-    pr_db = session.exec(select(PullRequest).where(PullRequest.repo_id == repo_db.id, PullRequest.number == pr_number)).one()
+    pr_db = session.exec(select(PullRequest).where(PullRequest.repo_id == repo.id, PullRequest.number == pr_number)).one()
     
     review_id = review["id"]
     author_login = review["user"]["login"]
@@ -165,15 +154,12 @@ def handle_pull_request_review(payload: dict, session: Session):
     except SQLAlchemyError as e:
         print("Database error:", e)
 
-def handle_pull_request_review_comment(payload: dict, session: Session):
-    action = payload.get("action")
+def handle_pull_request_review_comment(payload: dict, session: Session, repo: Repository):
     comment = payload["comment"]
-    repo = payload["repository"]
 
     pr_number = payload["pull_request"]["number"]
 
-    repo_db = session.exec(select(Repository).where(Repository.gh_id == repo["id"])).one()
-    pr_db = session.exec(select(PullRequest).where(PullRequest.repo_id == repo_db.id, PullRequest.number == pr_number)).one()
+    pr_db = session.exec(select(PullRequest).where(PullRequest.repo_id == repo.id, PullRequest.number == pr_number)).one()
 
     comment_id = comment["id"]
     review_id = comment["pull_request_review_id"]
@@ -199,12 +185,40 @@ def handle_pull_request_review_comment(payload: dict, session: Session):
     except SQLAlchemyError as e:
         print("Database error:", e)
 
-def handle_pull_request_review_thread(payload: dict, session: Session):
-    pass
-
-def handle_issue(payload : dict, session: Session):
+def handle_issue(payload : dict, session: Session, repo: Repository):
     action = payload.get("action")
+    issue = payload["issue"]
+    issue_number = issue["number"]
+    issue_state = IssueState.OPEN
+    repo_id = payload["repository"]["id"]
+    
 
-    if action in {"opened", "reopened"}:
-        # Activate Agent Orchestrator
-        pass
+    content = f"""
+    title: {issue["title"]}
+    body: {issue["body"].strip()}
+    """
+    
+    if action in {"opened", "edited", "closed"}:
+        if issue_state == "closed":
+            issue_state = IssueState.CLOSED
+        try:
+            upsert_issue(
+                session=session,
+                repo=repo.id,
+                number=issue_number,
+                state=issue_state,
+                content_embedding=model.embed(content) # type: ignore
+            )
+        except SQLAlchemyError as e:
+            print(f"Database error:", e)
+    elif action == "deleted":
+        try:
+            issue = session.exec(select(Issue).where(Issue.repo_id == repo.id, Issue.number == issue_number)).one_or_none()
+
+            if issue:
+                session.delete(issue)
+                session.flush()
+        except SQLAlchemyError as e:
+            print("Database Error:", e)
+    else:
+        print("Error: repository does not exist")

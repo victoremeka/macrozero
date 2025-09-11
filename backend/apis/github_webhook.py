@@ -61,8 +61,6 @@ async def handle_webhook_payload(request: Request):
             handle_pull_request_review(payload=payload, session=session)
         elif event == "pull_request_review_comment":
             handle_pull_request_review_comment(payload=payload, session=session)
-        elif event == "pull_request_review_thread":
-            handle_pull_request_review_thread(payload=payload, session=session)
         elif event == "issues":
             handle_issue(payload=payload, session=session)
         else:

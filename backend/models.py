@@ -103,6 +103,9 @@ class Issue(SQLModel, table=True):
     repo_id: int = Field(foreign_key="repository.id", index=True)
     number: int = Field(index=True)
     state: IssueState = Field(sa_column=Column(Enum(IssueState, name="issue_state")), default=IssueState.OPEN)
+    content_embedding: list[float] = Field(
+        sa_column=Column(VectorType(EMBED_DIM), nullable=False)
+    )
 
     # optional association if a PR closes this issue
     pr_id: int | None = Field(default=None, foreign_key="pullrequest.id", index=True)
