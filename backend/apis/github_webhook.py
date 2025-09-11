@@ -46,7 +46,8 @@ async def handle_webhook_payload(request: Request):
         raise
     event = request.headers.get("X-GitHub-Event")
     payload : dict = await request.json()
-
+    print(payload.get("action"))
+    dump_to_json("payload_response", payload)
     if event == "pull_request":
         handle_pull_request(payload=payload)
     elif event == "issues":

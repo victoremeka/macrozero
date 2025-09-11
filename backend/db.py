@@ -45,6 +45,7 @@ def get_db_engine():
             database=db_database,
         ),
         connect_args=connect_args,
+        pool_pre_ping=True,
         echo=True, # reminder: take out in prod
         future=True
     )
@@ -85,6 +86,8 @@ def upsert_pr(session: Session, repo: Repository, number: int, state: PRState, t
     session.flush()
     session.refresh(pr)
     return pr
+
+
 
 def upsert_review(session: Session, pr: PullRequest, comment_id: str, comment_text: str, author_login: str | None = None):
     review = session.exec(select(Review).where(Review.pr_id == pr.id, Review.comment_id == comment_id)).one_or_none()
