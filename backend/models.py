@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 import enum
-from sqlmodel import Field, SQLModel, Relationship, Text
+from sqlmodel import BigInteger, Field, SQLModel, Relationship, Text
 from sqlalchemy import Column, Enum, UniqueConstraint
 from tidb_vector.sqlalchemy import VectorType
 
@@ -79,8 +79,8 @@ class Commit(SQLModel, table=True):
 
 class Review(SQLModel, table=True):
     id : int | None = Field(default=None, primary_key=True)
-    review_id : int = Field(index=True)
-    comment_id : int = Field(index=True)
+    review_id : int = Field(sa_column=Column(BigInteger, index=True))
+    comment_id : int | None = Field(sa_column=Column(BigInteger, index=True))
     pr_id : int = Field(foreign_key="pullrequest.id", index=True)
     comment_text : str
     
