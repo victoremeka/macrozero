@@ -45,7 +45,8 @@ def get_db_engine():
             database=db_database,
         ),
         connect_args=connect_args,
-        echo=True, # reminder: take out in prod
+        pool_pre_ping=True,
+        echo=True, # TODO: take out in prod
         future=True
     )
 
@@ -53,9 +54,6 @@ engine = get_db_engine()
 
 def create_db_and_tables():
     SQLModel.metadata.create_all(engine)
-
-def get_session() -> Session:
-    return Session(engine)
 
 def upsert_repo(session: Session, gh_id: int, owner: str) -> Repository:
     repo = session.exec(select(Repository).where(Repository.gh_id == gh_id)).one_or_none()
@@ -86,17 +84,31 @@ def upsert_pr(session: Session, repo: Repository, number: int, state: PRState, t
     session.refresh(pr)
     return pr
 
-def upsert_review(session: Session, pr: PullRequest, comment_id: str, comment_text: str, author_login: str | None = None):
-    review = session.exec(select(Review).where(Review.pr_id == pr.id, Review.comment_id == comment_id)).one_or_none()
+def upsert_review(session: Session, pr: PullRequest, review_id: int, comment_text: str, review_type: str, created_at: datetime, file_path: str | None = None, line_number: int | None = None, comment_id: int | None = None, author_login: str | None = None) -> Review:
+    review = session.exec(select(Review).where(Review.pr_id == pr.id, Review.comment_id == comment_id, Review.review_id == review_id)).one_or_none()
 
     if review:
         review.comment_text = comment_text
         review.author_login = author_login
-
+        review.review_type = review_type
+        review.file_path = file_path
+        review.line_number = line_number
+        review.created_at = created_at
+    else:
+        review = Review(
+            pr_id=pr.id,
+            review_id=review_id,
+            comment_id=comment_id,
+            comment_text=comment_text,
+            review_type=review_type,
+            file_path=file_path,
+            line_number=line_number,
+            created_at=created_at,
+            author_login=author_login,
+        )
     session.add(review)
     session.flush()
     session.refresh(review)
-    
     return review
 
 def upsert_commit(
