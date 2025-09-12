@@ -1,22 +1,24 @@
 import os
 import openai
-from google.adk.agents import Agent
-from google.adk.models.lite_llm import LiteLlm
 import dotenv
+from google.adk.agents import Agent, SequentialAgent
+from google.adk.models.lite_llm import LiteLlm
+from agents.prompts import *
 
 dotenv.load_dotenv()
 
 KIMI_API_KEY = os.getenv("KIMI_API_KEY")
 KIMI_API_BASE_URL = os.getenv("KIMI_API_BASE_URL")
 
-model = model=LiteLlm(
-    model="moonshot/kimi-k2-0905-preview" # TODO set to turbo in prod
+model = LiteLlm(
+    model="moonshot/kimi-k2-0905-preview", 
 )
 
 reviewer_agent = Agent(
     name="reviewer_agent",
     model=model,
-    
+    description="",
+    instruction=review_prompt,
 )
 
 auto_fix_agent = Agent(
