@@ -41,7 +41,7 @@ export function DashboardPage() {
       </p>
 
       {/* Centered square card */}
-      <Card className="w-80 h-80 border-purple-500/20 bg-gradient-to-r from-purple-950/40 to-blue-950/40 backdrop-blur-sm">
+      <Card className="w-80 h-80 border-purple-500/10 bg-black/20 backdrop-blur-md">
         <CardContent className="p-6 h-full flex flex-col items-center justify-center text-center">
           <Avatar className="h-24 w-24 ring-0 mb-6">
             <AvatarImage src={user.avatar_url} alt={user.username} />
