@@ -2,8 +2,7 @@ from fastapi import FastAPI, Request, Depends
 from contextlib import asynccontextmanager
 from db import create_db_and_tables
 from apis.github_webhook import handle_webhook_payload
-from routers.auth import router as auth_router
-from middleware.auth import require_auth, optional_auth
+from routers.auth import get_current_user, router as auth_router
 
 
 @asynccontextmanager
@@ -28,13 +27,13 @@ async def webhook(request: Request):
 
 # Example protected route
 @app.get("/protected")
-async def protected_route(current_user: dict = Depends(require_auth)):
+async def protected_route(current_user: dict = Depends(get_current_user)):
     return {"message": "This is a protected route", "user": current_user}
 
 
 # Example optional auth route
 @app.get("/")
-async def root(current_user: dict = Depends(optional_auth)):
+async def root(current_user: dict = Depends(get_current_user)):
     if current_user:
         return {"message": f"Hello {current_user.get('username', 'User')}!"}
     return {"message": "Hello Guest!"}
