@@ -5,9 +5,15 @@ import jwt
 from fastapi import HTTPException, status
 
 # JWT Configuration
-JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "your-secret-key-change-in-production")
+JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY")
 JWT_ALGORITHM = "HS256"
 JWT_EXPIRE_HOURS = 24
+
+if not JWT_SECRET_KEY:
+    raise RuntimeError(
+        "JWT_SECRET_KEY environment variable is not set. "
+        "Set a strong secret key for production use."
+    )
 
 
 def create_access_token(user_data: Dict[str, Any]) -> str:
