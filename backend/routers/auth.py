@@ -110,9 +110,10 @@ async def github_callback(code: str, state: str, response: Response):
         key="access_token",
         value=jwt_token,
         httponly=True,
-        secure=os.getenv("ENVIRONMENT", "development").lower() == "production",  # Set to True in production with HTTPS
+        secure=os.getenv("ENVIRONMENT", "development").lower() == "production",
         samesite="lax",
         max_age=24 * 60 * 60,  # 24 hours
+        path="/",
     )
 
     # Redirect to frontend
@@ -136,7 +137,11 @@ async def get_current_user(access_token: Optional[str] = Cookie(None)):
 @router.post("/logout")
 async def logout(response: Response):
     """Logout user by clearing the cookie"""
-    response.delete_cookie("access_token")
+    response.delete_cookie(
+        key="access_token",
+        path="/",
+        samesite="lax",
+    )
     return {"message": "Successfully logged out"}
 
 
