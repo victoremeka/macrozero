@@ -10,4 +10,10 @@ uv sync
 uv run uvicorn backend.server:app --reload
 ```
 
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
 **Requirements:** Python 3.13+
