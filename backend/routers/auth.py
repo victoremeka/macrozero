@@ -110,7 +110,7 @@ async def github_callback(code: str, state: str, response: Response):
         key="access_token",
         value=jwt_token,
         httponly=True,
-        secure=True,  # Set to True in production with HTTPS
+        secure=os.getenv("ENVIRONMENT", "development").lower() == "production",  # Set to True in production with HTTPS
         samesite="lax",
         max_age=24 * 60 * 60,  # 24 hours
     )
