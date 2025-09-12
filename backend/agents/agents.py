@@ -33,12 +33,10 @@ sanitizer_agent = Agent(
     model=model
 )
 
-
 memory_agent = Agent(
     name="memory_agent",
     model=model,
 )
-
 
 issue_triage_agent = Agent(
     name="issue_triage_agent",
