@@ -8,8 +8,7 @@ async def get_current_user(
 ) -> Optional[Dict[str, Any]]:
     """
     Get current user data from JWT token.
-    Returns user data if token is valid, None if not authenticated.
-    Similar to optional_auth but with a more descriptive name.
+    Returns user data if token is valid, raises unauthorized error if not authenticated.
     """
     if not access_token:
         raise HTTPException(
