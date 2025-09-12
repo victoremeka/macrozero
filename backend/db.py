@@ -55,6 +55,10 @@ engine = get_db_engine()
 def create_db_and_tables():
     SQLModel.metadata.create_all(engine)
 
+def get_session():
+    with Session(engine) as session:
+        yield session
+
 def upsert_repo(session: Session, gh_id: int, owner: str) -> Repository:
     repo = session.exec(select(Repository).where(Repository.gh_id == gh_id)).one_or_none()
     if repo:
