@@ -140,14 +140,3 @@ async def logout(response: Response):
     return {"message": "Successfully logged out"}
 
 
-# Dependency for protected routes
-async def get_current_user_dependency(
-    access_token: Optional[str] = Cookie(None),
-) -> Dict[str, Any]:
-    """Dependency to get current user for protected routes"""
-    if not access_token:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated"
-        )
-
-    return verify_token(access_token)
