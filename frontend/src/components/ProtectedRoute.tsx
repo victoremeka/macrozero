@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { LoginPage } from "@/pages/auth/LoginPage";
+import { useNavigate } from "react-router-dom";
 
 interface ProtectedRouteProps {
   children: ReactNode;
@@ -9,6 +9,7 @@ interface ProtectedRouteProps {
 
 export function ProtectedRoute({ children, fallback }: ProtectedRouteProps) {
   const { isAuthenticated, isLoading } = useAuth();
+  const navigate = useNavigate();
 
   if (isLoading) {
     return (
@@ -22,7 +23,10 @@ export function ProtectedRoute({ children, fallback }: ProtectedRouteProps) {
   }
 
   if (!isAuthenticated) {
-    return fallback || <LoginPage />;
+    if (fallback) {
+      return <>{fallback}</>;
+    }
+      navigate("/");
   }
 
   return <>{children}</>;

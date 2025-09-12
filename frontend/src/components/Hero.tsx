@@ -3,16 +3,23 @@ import { BackgroundBeams } from "./ui/background-beams";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
+import { useState } from "react";
 
 export function Hero() {
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, user, login } = useAuth();
+  const [buttonText, setButtonText] = useState("Get Started");
   const navigate = useNavigate();
 
   const handleGetStarted = () => {
+
+
     if (isAuthenticated) {
       navigate("/dashboard");
+    } else if (buttonText === "Get Started") {
+      setButtonText("Continue with GitHub");
     } else {
-      navigate("/login");
+      setButtonText("Loading...")
+      login();
     }
   };
 
@@ -38,7 +45,6 @@ export function Hero() {
 
         <br />
 
-
         {/* CTA Button with enhanced design */}
         <Button
           size="lg"
@@ -52,7 +58,7 @@ export function Hero() {
             </>
           ) : (
             <>
-              Start Building
+              {buttonText}
               <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </>
           )}
