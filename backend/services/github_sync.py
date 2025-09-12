@@ -7,8 +7,6 @@ from models import *
 from sqlalchemy.exc import SQLAlchemyError
 from tidb_vector.sqlalchemy  import VectorType
 
-import lmstudio as lms #TODO: take out in prod.
-
 from db import (
     upsert_repo,
     upsert_pr,
@@ -18,6 +16,8 @@ from db import (
     link_commit_to_pr,
     link_issue_file,
 )
+import lmstudio as lms #TODO: take out in prod.
+
 model = lms.embedding_model("nomic-embed-text-v1.5") # TODO take out in prod
 
 def dump_to_json(name, data):
@@ -102,7 +102,6 @@ def handle_pull_request(payload: dict, session: Session, repo: Repository):
             session.refresh(pullrequest)
     
     elif action == "closed":
-        # dump_to_json("webhook_pr_closed_response", payload)
         pullrequest = session.exec(select(PullRequest).where(PullRequest.repo_id == repo.id, PullRequest.number == number)).one_or_none()
 
         if pullrequest:

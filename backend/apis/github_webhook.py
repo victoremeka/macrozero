@@ -55,14 +55,20 @@ async def handle_webhook_payload(request: Request):
 
     with Session(engine) as session:
         
+        repo = upsert_repo(
+            session=session,
+            gh_id=payload["repository"]["id"],
+            owner=payload["repository"]["owner"]["login"]
+        )
+        
         if event == "pull_request":
-            handle_pull_request(payload=payload, session=session)
+            handle_pull_request(payload=payload, session=session, repo=repo)
         elif event == "pull_request_review":
-            handle_pull_request_review(payload=payload, session=session)
+            handle_pull_request_review(payload=payload, session=session, repo=repo)
         elif event == "pull_request_review_comment":
-            handle_pull_request_review_comment(payload=payload, session=session)
+            handle_pull_request_review_comment(payload=payload, session=session, repo=repo)
         elif event == "issues":
-            handle_issue(payload=payload, session=session)
+            handle_issue(payload=payload, session=session, repo=repo)
         else:
             return {"ignored": event}
         
