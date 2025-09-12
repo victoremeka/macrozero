@@ -1,8 +1,7 @@
 import os
-import httpx
 from fastapi import APIRouter, HTTPException, status, Cookie, Response
 from fastapi.responses import RedirectResponse
-from typing import Optional, Dict, Any
+from typing import Optional
 
 import requests
 from utils.jwt_manager import create_access_token, verify_token
