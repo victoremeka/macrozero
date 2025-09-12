@@ -23,7 +23,7 @@ export function LoginPage() {
         </h1>
 
         <p className="text-xl md:text-2xl text-gray-300 max-w-3xl mx-auto mb-4 font-light leading-relaxed">
-          Multi-agent system that understand your codebase, automate GitHub workflows,
+          Multi-agent system that understands your codebase, automate GitHub workflows,
           and remember every fix
         </p>
 
