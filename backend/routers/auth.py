@@ -3,6 +3,7 @@ from fastapi import APIRouter, HTTPException, status, Cookie, Response
 from fastapi.responses import RedirectResponse
 from typing import Optional
 
+from pydantic import BaseModel
 import requests
 from utils.jwt_manager import create_access_token, verify_token
 from utils.state_store import oauth_state_store
@@ -10,7 +11,6 @@ from utils.state_store import oauth_state_store
 # GitHub OAuth Configuration
 GITHUB_CLIENT_ID = os.getenv("GITHUB_CLIENT_ID")
 GITHUB_CLIENT_SECRET = os.getenv("GITHUB_CLIENT_SECRET")
-FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:3000")
 
 if not GITHUB_CLIENT_ID or not GITHUB_CLIENT_SECRET:
     raise ValueError(
@@ -32,10 +32,16 @@ async def github_login():
     )
     return RedirectResponse(url=github_auth_url)
 
+class CallbackInfo(BaseModel):
+    code: str
+    state: str
 
-@router.get("/callback")
-async def github_callback(code: str, state: str, response: Response):
+@router.post("/callback")
+async def github_callback(callback_info: CallbackInfo, response: Response):
     """Handle GitHub OAuth callback"""
+    code = callback_info.code
+    state = callback_info.state
+
     if not code:
         raise HTTPException(status_code=400, detail="Authorization code not provided")
 
@@ -115,8 +121,9 @@ async def github_callback(code: str, state: str, response: Response):
         path="/",
     )
 
-    # Redirect to frontend
-    return RedirectResponse(url=f"{FRONTEND_URL}/dashboard")
+    return {
+        "message": "Login successful",
+    }
 
 
 @router.get("/me")
