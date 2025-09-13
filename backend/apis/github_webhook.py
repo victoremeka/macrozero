@@ -2,7 +2,6 @@ import hmac, hashlib
 from fastapi import HTTPException, Request
 from integrations.github_client import (comment_on_pr, WEBHOOK_SECRET)
 from services.github_sync import *
-from db import engine
 
 def verify_signature(raw: bytes, sig_header: str | None):
     """
@@ -39,7 +38,7 @@ def verify_signature(raw: bytes, sig_header: str | None):
         raise HTTPException(403, "Bad signature")
 
 
-async def handle_webhook_payload(request: Request):
+async def handle_webhook_payload(request: Request, session: Session):
     raw = await request.body()
     try:
         verify_signature(raw, request.headers.get("X-Hub-Signature-256"))
@@ -51,26 +50,23 @@ async def handle_webhook_payload(request: Request):
     # ---- Debug Helpers ----
     print("event ->", event, " action ->",payload.get("action"))
     dump_to_json("payload_response", payload)
+        
+    repo = upsert_repo(
+        session=session,
+        gh_id=payload["repository"]["id"],
+        owner=payload["repository"]["owner"]["login"]
+    )
     
-
-    with Session(engine) as session:
-        
-        repo = upsert_repo(
-            session=session,
-            gh_id=payload["repository"]["id"],
-            owner=payload["repository"]["owner"]["login"]
-        )
-        
-        if event == "pull_request":
-            handle_pull_request(payload=payload, session=session, repo=repo)
-        elif event == "pull_request_review":
-            handle_pull_request_review(payload=payload, session=session, repo=repo)
-        elif event == "pull_request_review_comment":
-            handle_pull_request_review_comment(payload=payload, session=session, repo=repo)
-        elif event == "issues":
-            handle_issue(payload=payload, session=session, repo=repo)
-        else:
-            return {"ignored": event}
-        
-        session.commit()
+    if event == "pull_request":
+        handle_pull_request(payload=payload, session=session, repo=repo)
+    elif event == "pull_request_review":
+        handle_pull_request_review(payload=payload, session=session, repo=repo)
+    elif event == "pull_request_review_comment":
+        handle_pull_request_review_comment(payload=payload, session=session, repo=repo)
+    elif event == "issues":
+        handle_issue(payload=payload, session=session, repo=repo)
+    else:
+        return {"ignored": event}
+    
+    session.commit()
     

@@ -70,7 +70,6 @@ def handle_pull_request(payload: dict, session: Session, repo: Repository):
     else:
         text = pr["title"]
     
-    model = lms.embedding_model("nomic-embed-text-v1.5")
     embedding = model.embed(text)
 
     if action in {"opened", "reopened", "synchronize"}:

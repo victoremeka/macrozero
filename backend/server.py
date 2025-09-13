@@ -1,6 +1,8 @@
 from fastapi import FastAPI, Request, Depends
 from contextlib import asynccontextmanager
-from db import create_db_and_tables
+
+from sqlmodel import Session
+from db import create_db_and_tables, get_session
 from apis.github_webhook import handle_webhook_payload
 from routers.auth import get_current_user, router as auth_router
 
@@ -21,8 +23,8 @@ app.include_router(auth_router)
 
 
 @app.post("/webhook")
-async def webhook(request: Request):
-    await handle_webhook_payload(request)
+async def webhook(request: Request, session : Session = Depends(get_session)):
+    await handle_webhook_payload(request, session)
 
 
 # Example protected route

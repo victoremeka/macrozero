@@ -298,6 +298,9 @@ def list_pull_requests(owner: str, repo: str, state="open") -> List[dict]:
     """
     return list(paginate(f"/repos/{owner}/{repo}/pulls", {"state": state}))
 
+def get_pull_request_diff(owner: str, repo: str, number: int):
+    return gh_request(method="get", path=f"/repos/{owner}/{repo}/pulls/{number}", headers={"Accept": "application/vnd.github.v3.diff",})
+
 def get_pull_request(owner: str, repo: str, number: int):
     """
     Get detailed information about a specific pull request.
@@ -366,7 +369,7 @@ def list_pr_files(owner: str, repo: str, number: int):
     """
     return list(paginate(f"/repos/{owner}/{repo}/pulls/{number}/files"))
 
-def comment_on_pr(owner: str, repo: str, number: int, body: str):
+def comment_on_pr(owner: str, repo: str, number: int, body: str, commit_sha: str, path: str):
     """
     Add a comment to a pull request.
 
@@ -387,7 +390,7 @@ def comment_on_pr(owner: str, repo: str, number: int, body: str):
         print(f"Comment created: {comment['html_url']}")
     """
     pr = get_pull_request(owner, repo, number)
-    return gh_json("POST", pr["comments_url"], json={"body": body})
+    return gh_json("POST", pr["comments_url"], json={"body": body, "commmit_id": commit_sha, "path": path})
 
 def merge_pr(owner: str, repo: str, number: int, method="squash", title: str | None = None):
     """
