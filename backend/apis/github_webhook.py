@@ -1,6 +1,6 @@
 import hmac, hashlib
 from fastapi import HTTPException, Request
-from integrations.github_client import (comment_on_pr, WEBHOOK_SECRET)
+from integrations.github_client import (comment_on_pr, WEBHOOK_SECRET, use_installation)
 from services.github_sync import *
 
 def verify_signature(raw: bytes, sig_header: str | None):
@@ -44,29 +44,33 @@ async def handle_webhook_payload(request: Request, session: Session):
         verify_signature(raw, request.headers.get("X-Hub-Signature-256"))
     except HTTPException as e:
         raise
+
     event = request.headers.get("X-GitHub-Event")
     payload : dict = await request.json()
 
-    # ---- Debug Helpers ----
-    print("event ->", event, " action ->",payload.get("action"))
-    dump_to_json("payload_response", payload)
-        
-    repo = upsert_repo(
-        session=session,
-        gh_id=payload["repository"]["id"],
-        owner=payload["repository"]["owner"]["login"]
-    )
-    
-    if event == "pull_request":
-        handle_pull_request(payload=payload, session=session, repo=repo)
-    elif event == "pull_request_review":
-        handle_pull_request_review(payload=payload, session=session, repo=repo)
-    elif event == "pull_request_review_comment":
-        handle_pull_request_review_comment(payload=payload, session=session, repo=repo)
-    elif event == "issues":
-        handle_issue(payload=payload, session=session, repo=repo)
+    print("event ->", event, " action ->", payload.get("action"))
+    inst_id = payload.get("installation", {}).get("id")
+
+    def _process():
+        repo = upsert_repo(
+            session=session,
+            gh_id=payload["repository"]["id"],
+            owner=payload["repository"]["owner"]["login"]
+        )
+        if event == "pull_request":
+            handle_pull_request(payload=payload, session=session, repo=repo)
+        elif event == "pull_request_review":
+            handle_pull_request_review(payload=payload, session=session, repo=repo)
+        elif event == "pull_request_review_comment":
+            # Ignore inline comment events to avoid duplicate inserts
+            print("Ignored: pull_request_review_comment")
+            return
+        elif event == "issues":
+            handle_issue(payload=payload, session=session, repo=repo)
+        session.commit()
+
+    if inst_id:
+        with use_installation(inst_id):
+            _process()
     else:
-        return {"ignored": event}
-    
-    session.commit()
-    
+        _process()

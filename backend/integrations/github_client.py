@@ -1,6 +1,8 @@
 import os, time, requests, jwt
 from typing import Any, Dict, Iterable, List, Optional
 import dotenv
+from contextvars import ContextVar
+from contextlib import contextmanager
 
 dotenv.load_dotenv()
 
@@ -11,7 +13,30 @@ WEBHOOK_SECRET = os.getenv("GITHUB_WEBHOOK_SECRET")
 PRIVATE_KEY_PATH = os.getenv("GITHUB_PRIVATE_KEY_PATH")
 
 API_BASE = "https://api.github.com"
-_token_cache: Dict[str, Any] = {"token": None, "exp": 0}
+# cache tokens per installation id instead of a single global token
+_token_cache: Dict[str, Dict[str, Any]] = {}  # {inst_id: {"token": str, "exp": float}}
+
+# track the current installation id (per request/task); default to env INSTALLATION_ID
+_CURRENT_INSTALLATION_ID: ContextVar[Optional[str]] = ContextVar(
+    "current_installation_id", default=INSTALLATION_ID
+)
+
+def set_installation_id(installation_id: int | str) -> None:
+    _CURRENT_INSTALLATION_ID.set(str(installation_id))
+
+@contextmanager
+def use_installation(installation_id: int | str):
+    token = _CURRENT_INSTALLATION_ID.set(str(installation_id))
+    try:
+        yield
+    finally:
+        _CURRENT_INSTALLATION_ID.reset(token)
+
+def _current_installation_id() -> str:
+    inst = _CURRENT_INSTALLATION_ID.get() or INSTALLATION_ID
+    if not inst:
+        raise RuntimeError("No installation id configured")
+    return str(inst)
 
 def _private_key() -> str:
     """
@@ -76,48 +101,26 @@ def _issue_jwt() -> str:
     return jwt.encode(payload, _private_key(), algorithm="RS256")
 
 def _installation_token() -> str:
-    """
-    Obtain an installation access token for authenticating GitHub API requests.
-
-    This function implements token caching with automatic refresh:
-    - Returns cached token if still valid (with 30-second buffer)
-    - Otherwise, exchanges a JWT for a new installation token
-    - Caches the new token with its expiration time
-
-    The installation token allows the app to act on behalf of the installation,
-    accessing repositories and performing actions as the GitHub App.
-
-    Returns:
-        str: A valid GitHub installation access token for API authentication.
-
-    Raises:
-        RuntimeError: If the token request fails (network, auth, or API errors).
-        
-    Side Effects:
-        Updates the global _token_cache with the new token and expiration.
-
-    Usage:
-        This is an internal function - use _headers() or gh_request() for API calls.
-    """
     now = time.time()
-    if _token_cache["token"] and now < _token_cache["exp"] - 30:
-        return _token_cache["token"]
+    inst_id = _current_installation_id()
+    cached = _token_cache.get(inst_id)
+    if cached and now < cached["exp"] - 30:
+        return cached["token"]
+
     headers = {"Authorization": f"Bearer {_issue_jwt()}", "Accept": "application/vnd.github+json"}
-    url = f"{API_BASE}/app/installations/{INSTALLATION_ID}/access_tokens"
+    url = f"{API_BASE}/app/installations/{inst_id}/access_tokens"
     r = requests.post(url, headers=headers, timeout=15)
     if r.status_code >= 300:
         raise RuntimeError(f"Token error {r.status_code}: {r.text}")
     data = r.json()
-    expires_at = data.get("expires_at")  # e.g. 2024-01-01T00:00:00Z
+
+    expires_at = data.get("expires_at")
     exp_epoch = now + 3000
     if expires_at:
-        # crude parse
-        try:
-            from datetime import datetime, timezone
-            exp_epoch = datetime.strptime(expires_at, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc).timestamp()
-        except:
-            pass
-    _token_cache.update({"token": data["token"], "exp": exp_epoch})
+        from datetime import datetime, timezone
+        exp_epoch = datetime.strptime(expires_at, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc).timestamp()
+
+    _token_cache[inst_id] = {"token": data["token"], "exp": exp_epoch}
     return data["token"]
 
 def _headers(extra: Optional[Dict[str, str]] = None) -> Dict[str, str]:
@@ -299,7 +302,7 @@ def list_pull_requests(owner: str, repo: str, state="open") -> List[dict]:
     return list(paginate(f"/repos/{owner}/{repo}/pulls", {"state": state}))
 
 def get_pull_request_diff(owner: str, repo: str, number: int):
-    return gh_request(method="get", path=f"/repos/{owner}/{repo}/pulls/{number}", headers={"Accept": "application/vnd.github.v3.diff",})
+    return gh_request(method="GET", path=f"/repos/{owner}/{repo}/pulls/{number}", headers={"Accept": "application/vnd.github.v3.diff",})
 
 def get_pull_request(owner: str, repo: str, number: int):
     """
