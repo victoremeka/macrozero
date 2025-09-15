@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 
 from sqlmodel import Session
 from db import create_db_and_tables, get_session
-from agents.session_service import get_agent_session
+from agents.session_service import get_agent_session_service
 from apis.github_webhook import handle_webhook_payload
 from routers.auth import get_current_user, router as auth_router
 from google.adk.sessions import DatabaseSessionService, InMemorySessionService
@@ -31,8 +31,9 @@ app.include_router(auth_router)
 async def webhook(
     request: Request, 
     session : Session = Depends(get_session), 
-    agent_session : DatabaseSessionService | InMemorySessionService = Depends(get_agent_session)
+    agent_session : DatabaseSessionService | InMemorySessionService = Depends(get_agent_session_service)
     ):
+    
     await handle_webhook_payload(request, session, agent_session)
 
 # Example protected route

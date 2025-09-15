@@ -6,7 +6,9 @@ from agents.tools import create_pr_review
 from integrations.github_client import *
 from models import *
 from sqlalchemy.exc import SQLAlchemyError
-from services.agent_orchestrator import call_agent_async, root_agent_runner
+from services.agent_orchestrator import call_agent_async
+from google.adk.sessions import Session as AgentSession
+from google.adk.runners import Runner
 
 from db import (
     upsert_repo,
@@ -58,7 +60,7 @@ def add_pr_commits_to_db(pr: PullRequest, repo: Repository, repo_name: str, owne
             pr=pr
         )
 
-async def handle_pull_request(payload: dict, session: Session, repo: Repository):
+async def handle_pull_request(payload: dict, session: Session, repo: Repository, agent_session: AgentSession, runner: Runner):
     action = payload.get("action")
     pr : dict = payload["pull_request"]
     repo_owner = pr["base"]["repo"]["owner"]["login"]
@@ -92,7 +94,9 @@ async def handle_pull_request(payload: dict, session: Session, repo: Repository)
             add_pr_commits_to_db(pullrequest, repo, repo_name, repo_owner, number, session)
 
             print("----> Triggered Agent. Processing... <----")
-            asyncio.run(call_agent_async(
+            APP_NAME="macrozero"
+            
+            await call_agent_async(
                 payload={
                     "payload_type": "pull_request",
                     "diff": diff,
@@ -100,10 +104,10 @@ async def handle_pull_request(payload: dict, session: Session, repo: Repository)
                     "repo": repo_name,
                     "repo_number": number, 
                 },
-                runner=root_agent_runner,
+                runner=runner,
                 user_id=payload["sender"]["login"],
-                session_id=pr["id"]
-            ))
+                session_id=agent_session.id
+            )
 
             
         except SQLAlchemyError as e:
