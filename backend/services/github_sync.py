@@ -66,6 +66,7 @@ async def handle_pull_request(payload: dict, session: Session, repo: Repository)
     repo_owner = pr["base"]["repo"]["owner"]["login"]
     repo_name = pr["base"]["repo"]["name"]
     number = pr["number"]
+    title = pr["title"]
     head_branch = pr["head"]["ref"]
     base_branch = pr["base"]["ref"]
 
@@ -77,6 +78,7 @@ async def handle_pull_request(payload: dict, session: Session, repo: Repository)
     embedding = model.embed(text)
 
     diff = get_pull_request_diff(owner=repo_owner, repo=repo_name, number=number)
+    print("DIFF ->", diff)
 
     if action in {"opened", "reopened", "synchronize"}:
         state = PRState.OPEN
@@ -94,7 +96,11 @@ async def handle_pull_request(payload: dict, session: Session, repo: Repository)
             add_pr_commits_to_db(pullrequest, repo, repo_name, repo_owner, number, session)
             await call_agent_async(
                 payload={
-                    "diff": diff
+                    "diff": diff,
+                    "owner": repo_owner,
+                    "repo": repo_name,
+                    "number": number,
+                    "title": title,
                 },
                 user_id="usr_1",
                 session_id="001",

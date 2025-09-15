@@ -82,7 +82,7 @@ class Review(SQLModel, table=True):
     review_id : int = Field(sa_column=Column(BigInteger, index=True))
     comment_id : int | None = Field(sa_column=Column(BigInteger, index=True))
     pr_id : int = Field(foreign_key="pullrequest.id", index=True)
-    comment_text : str
+    comment_text : str | None
     
     review_type: str | None = Field(default=None, index=True) # "APPROVED", "CHANGES_REQUESTED", "COMMENTED", "INLINE"
     file_path: str | None
