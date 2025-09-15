@@ -3,9 +3,8 @@ from fastapi import HTTPException, Request
 from integrations.github_client import (comment_on_pr, WEBHOOK_SECRET, use_installation)
 from services.github_sync import *
 from google.adk.sessions import DatabaseSessionService, InMemorySessionService
-from google.genai import types
 
-APP_NAME = "wmacrozero"
+APP_NAME = "macrozero"
 
 def verify_signature(raw: bytes, sig_header: str | None):
     """

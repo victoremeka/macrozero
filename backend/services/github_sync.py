@@ -1,12 +1,12 @@
 import json
 import re
-
+import asyncio
 from sqlmodel import select, Session
 from agents.tools import create_pr_review
 from integrations.github_client import *
 from models import *
 from sqlalchemy.exc import SQLAlchemyError
-from tidb_vector.sqlalchemy  import VectorType
+from services.agent_orchestrator import call_agent_async, root_agent_runner
 
 from db import (
     upsert_repo,
@@ -58,7 +58,7 @@ def add_pr_commits_to_db(pr: PullRequest, repo: Repository, repo_name: str, owne
             pr=pr
         )
 
-def handle_pull_request(payload: dict, session: Session, repo: Repository):
+async def handle_pull_request(payload: dict, session: Session, repo: Repository):
     action = payload.get("action")
     pr : dict = payload["pull_request"]
     repo_owner = pr["base"]["repo"]["owner"]["login"]
@@ -91,22 +91,20 @@ def handle_pull_request(payload: dict, session: Session, repo: Repository):
             )
             add_pr_commits_to_db(pullrequest, repo, repo_name, repo_owner, number, session)
 
-            # Trigger Agent Call Here
-            # create_pr_review(
-            #     owner=repo_owner,
-            #     repo=repo_name,
-            #     number=number,
-            #     body="This is a test review with Macrozero app",
-            #     event="COMMENT",
-            #     comments=[
-            #         {
-            #             "path": "main.py",
-            #             "position": int(diff[0][0])+1,
-            #             "body": "```suggestion\nprint(\"Hello from agent!\")\n```"
-                        
-            #         }
-            #     ]
-            # )
+            print("----> Triggered Agent. Processing... <----")
+            asyncio.run(call_agent_async(
+                payload={
+                    "payload_type": "pull_request",
+                    "diff": diff,
+                    "owner": repo_owner,
+                    "repo": repo_name,
+                    "repo_number": number, 
+                },
+                runner=root_agent_runner,
+                user_id=payload["sender"]["login"],
+                session_id=pr["id"]
+            ))
+
             
         except SQLAlchemyError as e:
             print("Database error:", e)

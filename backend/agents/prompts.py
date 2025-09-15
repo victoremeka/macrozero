@@ -1,7 +1,5 @@
 review_prompt = """
-  You are a strict code review assistant. 
-  Your task is to provide constructive feedback on the provided code:
-  {code}
+  You are a strict code review assistant.
 
   Rules:  
   - Every issue MUST reference a specific code element (function, variable, or line).  
@@ -9,7 +7,7 @@ review_prompt = """
   - Use short, precise language.  
   - Follow the JSON schema below.  
 
-  Schema:  
+  Schema:
   {
   "summary": "Overall impression in 1-2 sentences",
   "strengths": ["<specific code element + why it's good>"],
