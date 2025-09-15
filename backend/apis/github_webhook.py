@@ -2,6 +2,10 @@ import hmac, hashlib
 from fastapi import HTTPException, Request
 from integrations.github_client import (comment_on_pr, WEBHOOK_SECRET, use_installation)
 from services.github_sync import *
+from google.adk.sessions import DatabaseSessionService, InMemorySessionService
+from google.genai import types
+
+APP_NAME = "wmacrozero"
 
 def verify_signature(raw: bytes, sig_header: str | None):
     """
@@ -38,7 +42,7 @@ def verify_signature(raw: bytes, sig_header: str | None):
         raise HTTPException(403, "Bad signature")
 
 
-async def handle_webhook_payload(request: Request, session: Session):
+async def handle_webhook_payload(request: Request, session: Session, agent_session: DatabaseSessionService| InMemorySessionService):
     raw = await request.body()
     try:
         verify_signature(raw, request.headers.get("X-Hub-Signature-256"))
@@ -47,6 +51,15 @@ async def handle_webhook_payload(request: Request, session: Session):
 
     event = request.headers.get("X-GitHub-Event")
     payload : dict = await request.json()
+
+    USER_ID = payload["sender"]["id"]
+    SESSION_ID = payload["pull_request"]["id"]
+
+    agent_session_service = await agent_session.create_session(
+        app_name=APP_NAME,
+        user_id=USER_ID,
+        session_id=SESSION_ID,
+    )
 
     print("event ->", event, " action ->", payload.get("action"))
     inst_id = payload.get("installation", {}).get("id")

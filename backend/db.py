@@ -55,6 +55,19 @@ engine = get_db_engine()
 def create_db_and_tables():
     SQLModel.metadata.create_all(engine)
 
+def get_db_url():
+    url = URL.create(
+        drivername="mysql+pymysql",
+        username=db_username,
+        password=db_password,
+        host=db_host,
+        port=db_port, # type: ignore
+        database=db_database,
+    )
+    return url
+
+get_db_url()
+
 def get_session():
     with Session(engine) as session:
         yield session

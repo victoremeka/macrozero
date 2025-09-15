@@ -67,14 +67,14 @@ def handle_pull_request(payload: dict, session: Session, repo: Repository):
     head_branch = pr["head"]["ref"]
     base_branch = pr["base"]["ref"]
 
-    
-
     if pr.get("body"):
         text = pr["title"] + " ".join(re.split(r"\n|\r", pr["body"].strip()))
     else:
         text = pr["title"]
     
     embedding = model.embed(text)
+
+    diff = get_pull_request_diff(owner=repo_owner, repo=repo_name, number=number)
 
     if action in {"opened", "reopened", "synchronize"}:
         state = PRState.OPEN
@@ -90,28 +90,23 @@ def handle_pull_request(payload: dict, session: Session, repo: Repository):
                 base_branch=base_branch,
             )
             add_pr_commits_to_db(pullrequest, repo, repo_name, repo_owner, number, session)
-            diff = get_pull_request_diff(owner=repo_owner, repo=repo_name, number=number).text
-            text = diff.split("\n")
 
-            for i, lines in enumerate(text):
-                if lines.startswith("@"):
-                    text = list(enumerate(text[i+1:]))
-            print("text -> ", text)
-            create_pr_review(
-                owner=repo_owner,
-                repo=repo_name,
-                number=number,
-                body="This is a test review with Macrozero app",
-                event="COMMENT",
-                comments=[
-                    {
-                        "path": "main.py",
-                        "position": int(text[0][0])+1,
-                        "body": "```suggestion\nprint(\"Hello from agent!\")\n```"
+            # Trigger Agent Call Here
+            # create_pr_review(
+            #     owner=repo_owner,
+            #     repo=repo_name,
+            #     number=number,
+            #     body="This is a test review with Macrozero app",
+            #     event="COMMENT",
+            #     comments=[
+            #         {
+            #             "path": "main.py",
+            #             "position": int(diff[0][0])+1,
+            #             "body": "```suggestion\nprint(\"Hello from agent!\")\n```"
                         
-                    }
-                ]
-            )
+            #         }
+            #     ]
+            # )
             
         except SQLAlchemyError as e:
             print("Database error:", e)

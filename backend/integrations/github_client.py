@@ -1,3 +1,4 @@
+import re
 import os, time, requests, jwt
 from typing import Any, Dict, Iterable, List, Optional
 import dotenv
@@ -302,7 +303,34 @@ def list_pull_requests(owner: str, repo: str, state="open") -> List[dict]:
     return list(paginate(f"/repos/{owner}/{repo}/pulls", {"state": state}))
 
 def get_pull_request_diff(owner: str, repo: str, number: int):
-    return gh_request(method="GET", path=f"/repos/{owner}/{repo}/pulls/{number}", headers={"Accept": "application/vnd.github.v3.diff",})
+    diff = gh_request(method="GET", path=f"/repos/{owner}/{repo}/pulls/{number}", headers={"Accept": "application/vnd.github.v3.diff",}).text
+    
+    file_regex = re.compile(r'^\+\+\+ b/(.+)$', re.MULTILINE)
+    diff_line_regex = re.compile(r'^([+-])(?!\1\1)(.*)$', re.MULTILINE)
+
+    grouped = {}
+    current_file = None
+    res = ""
+
+    i = 1
+    for line in diff.splitlines():
+        m_file = file_regex.match(line)
+        if m_file:
+            current_file = m_file.group(1)
+            grouped[current_file] = []
+            res += f"\nFile: {current_file}\n"
+            i = 1
+            continue
+        
+        m_line = diff_line_regex.match(line)
+        if m_line and current_file:
+            sign, content = m_line.groups()
+            grouped[current_file].append((i, sign + content))
+            res += f"{i}|{sign + content}\n"
+            i += 1
+
+    return res.strip("\n")
+
 
 def get_pull_request(owner: str, repo: str, number: int):
     """
