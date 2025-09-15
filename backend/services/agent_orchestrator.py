@@ -1,6 +1,8 @@
-from google.adk import Agent
+from google.adk.agents import LlmAgent
 from google.adk.runners import Runner
 from google.genai import types
+from google.adk.sessions import InMemorySessionService, DatabaseSessionService
+from agents.tools import model
 
 
 from agents.agents import (
@@ -10,8 +12,9 @@ from agents.agents import (
     code_review_agent,
 )
 
-orchestrator_agent = Agent(
+orchestrator_agent = LlmAgent(
     name="orchestrator_agent",
+    model=model,
     description="",
     instruction="""
     You are an orchestrator agent.
@@ -34,9 +37,30 @@ orchestrator_agent = Agent(
         code_review_agent,
     ]
 )
+APP_NAME = "macrozero"
+session_service = InMemorySessionService()
 
-async def call_agent_async(payload: dict, runner: Runner, user_id: str, session_id: str, is_pr: bool = True):
+runner = Runner(
+   agent=orchestrator_agent,
+   app_name=APP_NAME,
+   session_service=session_service
+)
 
+async def call_agent_async(payload: dict, user_id: str, session_id: str, is_pr: bool = True):
+    
+    session = await session_service.get_session(
+       app_name=APP_NAME,
+       user_id=user_id,
+       session_id=session_id,
+    )
+
+    if not session:
+      session = await session_service.create_session(
+        app_name=APP_NAME,
+        user_id=user_id,
+        session_id=session_id,
+      )
+    
     content = types.Content(
        role='user', 
        parts=[types.Part(text=f"GitHub webhook context:\n{payload}")]
@@ -51,5 +75,5 @@ async def call_agent_async(payload: dict, runner: Runner, user_id: str, session_
             final_response_text = f"Agent escalated: {event.error_message or 'No specific message.'}"
           break
     
-    print("RUNNING IN CALL_AGENT_ASYNC -->", final_response_text)
+    print("FINAL RESPONSE IN CALL_AGENT_ASYNC -->", final_response_text)
     return final_response_text

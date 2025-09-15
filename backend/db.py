@@ -56,7 +56,7 @@ def get_db_engine():
         ),
         connect_args=connect_args,
         pool_pre_ping=True,
-        echo=True, # TODO: take out in prod
+        # echo=True, # TODO: take out in prod
         future=True
     )
 

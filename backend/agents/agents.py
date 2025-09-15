@@ -1,8 +1,4 @@
-import dotenv
-import asyncio
 from google.adk.agents import Agent, SequentialAgent
-
-from pydantic import BaseModel, Field
 
 from .prompts import review_prompt       
 from .tools import create_pr_review, model     

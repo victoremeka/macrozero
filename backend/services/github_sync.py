@@ -60,7 +60,7 @@ def add_pr_commits_to_db(pr: PullRequest, repo: Repository, repo_name: str, owne
             pr=pr
         )
 
-async def handle_pull_request(payload: dict, session: Session, repo: Repository, agent_session: AgentSession, runner: Runner):
+async def handle_pull_request(payload: dict, session: Session, repo: Repository):
     action = payload.get("action")
     pr : dict = payload["pull_request"]
     repo_owner = pr["base"]["repo"]["owner"]["login"]
@@ -92,24 +92,13 @@ async def handle_pull_request(payload: dict, session: Session, repo: Repository,
                 base_branch=base_branch,
             )
             add_pr_commits_to_db(pullrequest, repo, repo_name, repo_owner, number, session)
-
-            print("----> Triggered Agent. Processing... <----")
-            APP_NAME="macrozero"
-            
             await call_agent_async(
                 payload={
-                    "payload_type": "pull_request",
-                    "diff": diff,
-                    "owner": repo_owner,
-                    "repo": repo_name,
-                    "repo_number": number, 
+                    "diff": diff
                 },
-                runner=runner,
-                user_id=payload["sender"]["login"],
-                session_id=agent_session.id
+                user_id="usr_1",
+                session_id="001",
             )
-
-            
         except SQLAlchemyError as e:
             print("Database error:", e)
 
