@@ -1,0 +1,25 @@
+version: "3.9"
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    image: macrozero-backend:dev
+    env_file:
+      - ./backend/.env
+    ports:
+      - "8000:8000"
+    # Mount GitHub App private key as a secret; set env to point to it
+    secrets:
+      - gh_app_key
+    environment:
+      - GITHUB_PRIVATE_KEY_PATH=/run/secrets/gh_app_key
+    # Mount CA bundle so TLS DB clients can verify servers (e.g., TiDB Cloud)
+    volumes:
+      - ./backend/isrgrootx1.pem:/app/isrgrootx1.pem:ro
+    command: ["python", "-m", "uvicorn", "server:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1"]
+
+secrets:
+  gh_app_key:
+    file: ./backend/test/macrozero-app.2025-09-07.private-key.pem

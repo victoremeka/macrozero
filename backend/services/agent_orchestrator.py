@@ -66,7 +66,6 @@ async def call_agent_async(payload: dict, user_id: str, session_id: str):
         session_id=session_id,
     )
 
-    # Pass valid JSON to improve model parsing reliability
     payload_json = json.dumps(payload, ensure_ascii=False)
     content = types.Content(
         role="user",
@@ -79,7 +78,6 @@ async def call_agent_async(payload: dict, user_id: str, session_id: str):
         is_final = getattr(event, "is_final_response", lambda: False)()
 
         if is_final:
-            # Extract text conservatively without dot-chaining optional attributes
             evt_content = getattr(event, "content", None)
             text_val = None
             if evt_content is not None:
@@ -103,10 +101,7 @@ async def call_agent_async(payload: dict, user_id: str, session_id: str):
                 final_response_text = str(getattr(event, "message", "")) or str(event)
     print("FINAL RESPONSE IN CALL_AGENT_ASYNC -->", final_response_text)
 
-    # Fallback: If the packager failed to call the tool and instead returned JSON,
-    # attempt to parse and submit the review server-side to avoid dropping work.
     try:
-        # Handle possible wrapping (e.g., triple backticks) by extracting the first JSON object.
         text = str(final_response_text or "").strip()
         json_start = text.find("{")
         json_end = text.rfind("}")
@@ -123,7 +118,6 @@ async def call_agent_async(payload: dict, user_id: str, session_id: str):
             required = {"owner", "repo", "number", "body", "event"}
             if required.issubset(parsed.keys()):
                 comments = parsed.get("comments") or []
-                # Normalize comments to GitHub Create Review schema: require line + side (not position)
                 filtered: list[dict] = []
                 seen: set[tuple] = set()
                 for c in comments:
@@ -135,7 +129,6 @@ async def call_agent_async(payload: dict, user_id: str, session_id: str):
                     side = c.get("side") or "RIGHT"
                     start_line = c.get("start_line")
                     start_side = c.get("start_side")
-                    # Skip entries that only contain deprecated/unsupported "position"
                     if path and body and isinstance(line, int):
                         key = (path, line, side)
                         if key in seen:
