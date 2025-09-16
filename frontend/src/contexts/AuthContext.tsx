@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useEffect } from "react";
 import type { ReactNode } from "react";
 import type { User } from "@/lib/auth";
-import { getCurrentUser, logout as logoutAPI } from "@/lib/auth";
+import { API_BASE_URL, getCurrentUser, logout as logoutAPI } from "@/lib/auth";
 
 interface AuthContextType {
   user: User | null;
@@ -39,7 +39,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const login = () => {
     // Redirect to GitHub OAuth
-    window.location.href = "http://localhost:8000/auth/login";
+    window.location.href = `${API_BASE_URL}/auth/login`;
   };
 
   const logout = async () => {
