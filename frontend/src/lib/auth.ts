@@ -1,5 +1,4 @@
-// API configuration
-export const API_BASE_URL = process.env.API_BASE_URL || 'http://localhost:8000';
+import api, { API_BASE_URL, getErrorMessage, isAxiosError } from './api';
 
 export interface User {
   github_id: number;
@@ -13,18 +12,28 @@ export interface AuthResponse {
   message: string;
 }
 
+export interface LoginResponse {
+  url: string;
+}
+
 class AuthAPI {
-  private baseUrl: string;
-
-  constructor(baseUrl: string = API_BASE_URL) {
-    this.baseUrl = baseUrl;
-  }
-
   /**
    * Redirect to GitHub OAuth login
    */
-  initiateLogin(): void {
-    window.location.href = `${this.baseUrl}/auth/login`;
+  async initiateLogin(): Promise<void> {
+    try {
+      const response = await api.get<LoginResponse>('/auth/login');
+      const data = response.data;
+      
+      if (!data.url) {
+        throw new Error('No login URL received from server');
+      }
+      
+      window.location.href = data.url;
+    } catch (error) {
+      console.error('Failed to initiate login:', getErrorMessage(error));
+      throw new Error('Failed to start login process. Please try again.');
+    }
   }
 
   /**
@@ -32,20 +41,20 @@ class AuthAPI {
    */
   async getCurrentUser(): Promise<User | null> {
     try {
-      const response = await fetch(`${this.baseUrl}/auth/me`, {
-        credentials: 'include', // Include HTTP-only cookies
-      });
-
-      if (response.ok) {
-        const user = await response.json();
-        return user;
-      } else if (response.status === 401) {
-        return null; // Not authenticated
-      } else {
-        throw new Error(`Failed to get user: ${response.status}`);
+      const response = await api.get<User>('/auth/me');
+      
+      if (response.status === 200) {
+        return response.data;
       }
+      
+      return null;
     } catch (error) {
-      console.error('Auth check failed:', error);
+      if (isAxiosError(error) && error.response?.status === 401) {
+        // User is not authenticated - this is expected
+        return null;
+      }
+      
+      console.error('Auth check failed:', getErrorMessage(error));
       return null;
     }
   }
@@ -55,36 +64,33 @@ class AuthAPI {
    */
   async logout(): Promise<void> {
     try {
-      const response = await fetch(`${this.baseUrl}/auth/logout`, {
-        method: 'POST',
-        credentials: 'include',
-      });
-
-      if (!response.ok) {
-        throw new Error(`Logout failed: ${response.status}`);
+      const response = await api.post<AuthResponse>('/auth/logout');
+      
+      if (response.status !== 200) {
+        throw new Error(`Logout failed with status: ${response.status}`);
       }
     } catch (error) {
-      console.error('Logout failed:', error);
-      throw error;
+      console.error('Logout failed:', getErrorMessage(error));
+      throw new Error('Failed to logout. Please try again.');
     }
   }
 
   /**
-   * Make authenticated API request
+   * Handle OAuth callback after GitHub redirect
    */
-  async authenticatedRequest(endpoint: string, options: RequestInit = {}): Promise<Response> {
-    const response = await fetch(`${this.baseUrl}${endpoint}`, {
-      ...options,
-      credentials: 'include', // Include HTTP-only cookies
-    });
-
-    if (response.status === 401) {
-      // Redirect to login if unauthorized
-      this.initiateLogin();
-      throw new Error('Unauthorized - redirecting to login');
+  async handleCallback(code: string): Promise<void> {
+    try {
+      const response = await api.post<AuthResponse>('/auth/callback', {
+        code,
+      });
+      
+      if (response.status !== 200) {
+        throw new Error(`Callback failed with status: ${response.status}`);
+      }
+    } catch (error) {
+      console.error('OAuth callback failed:', getErrorMessage(error));
+      throw new Error('Authentication failed. Please try again.');
     }
-
-    return response;
   }
 }
 
@@ -95,5 +101,8 @@ export const authAPI = new AuthAPI();
 export const redirectToLogin = () => authAPI.initiateLogin();
 export const getCurrentUser = () => authAPI.getCurrentUser();
 export const logout = () => authAPI.logout();
-export const makeAuthenticatedRequest = (endpoint: string, options?: RequestInit) => 
-  authAPI.authenticatedRequest(endpoint, options);
+export const handleAuthCallback = (code: string) => 
+  authAPI.handleCallback(code);
+
+// Export API_BASE_URL for backward compatibility
+export { API_BASE_URL };
