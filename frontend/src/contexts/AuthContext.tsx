@@ -74,11 +74,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   };
 
-  const handleCallback = async (code: string, state: string) => {
+  const handleCallback = async (code: string) => {
     try {
       setError(null);
       setIsLoading(true);
-      await handleAuthCallback(code, state);
+      await handleAuthCallback(code);
       // After successful callback, refresh user data
       await refreshUser();
     } catch (error) {

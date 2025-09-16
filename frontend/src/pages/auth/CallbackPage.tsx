@@ -18,7 +18,6 @@ export function CallbackPage() {
   useEffect(() => {
     const processCallback = async () => {
       const code = searchParams.get("code");
-      const state = searchParams.get("state");
       const error = searchParams.get("error");
       const errorDescription = searchParams.get("error_description");
 
@@ -32,15 +31,15 @@ export function CallbackPage() {
       }
 
       // Validate required parameters
-      if (!code || !state) {
+      if (!code) {
         setStatus("error");
-        setErrorMessage("Missing authorization code or state parameter");
+        setErrorMessage("Missing authorization code");
         return;
       }
 
       try {
         // Use the auth context's handleCallback method
-        await handleCallback(code, state);
+        await handleCallback(code);
         setStatus("success");
 
         // Small delay for better UX, then navigate
