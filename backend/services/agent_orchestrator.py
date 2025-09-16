@@ -14,7 +14,6 @@ logging.basicConfig(
 from agents.agents import (
     memory_agent,
     issue_triage_resolution_agent,
-    research_agent,
     code_review_agent,
 )
 
@@ -34,14 +33,14 @@ orchestrator_agent = LlmAgent(
     Behavior:
   - No questions. If required fields are missing, respond: missing <fields>.
   - Pass only: owner, repo, number (PR/issue), body, and diff if available.
-  - Do not select internal step agents (names starting with `_step_`). Only choose from: code_review_agent, issue_triage_agent, research_agent, db_admin_agent.
+    - Do not select internal step agents (names starting with `_step_`). Only choose from: code_review_agent, issue_triage_agent, research_agent.
+    - Do NOT route GitHub webhooks to db_admin_agent/memory_agent. That agent is reserved for explicit database/vector memory tasks (e.g., "search memory", "similar PRs", migrations).
 
     Pass the final result to `handoff_data`
     """,
     sub_agents=[
         memory_agent,
         issue_triage_resolution_agent,
-        research_agent,
         code_review_agent,
     ],
     output_key="handoff_data"

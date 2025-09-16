@@ -23,7 +23,7 @@ RUN python -m pip install --no-cache-dir uv
 COPY pyproject.toml uv.lock ./
 
 # Install dependencies into the system environment (no dev deps)
-RUN uv sync --frozen --no-dev --system
+RUN uv sync --frozen --no-dev
 
 # Copy application code
 COPY . /app
