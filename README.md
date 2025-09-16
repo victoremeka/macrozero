@@ -1,19 +1,94 @@
-# macrozero
+# Macrozero
 
-Multi-agent system that summarizes GitHub bugs, drafts PRs, reviews code, and recalls past fixes.
+AI code review co‑pilot for GitHub pull requests.
 
-## Setup
+- Watches PR webhooks as a GitHub App
+- Runs a two‑stage AI reviewer (analyze → package)
+- Posts structured reviews with line‑anchored comments
 
-```bash
-cd backend
-uv sync
-uv run uvicorn backend.server:app --reload
-```
+## Quick start
 
-```bash
-cd frontend
-npm install
-npm run dev
-```
+### Prerequisites
+- Docker and Docker Compose
+- A MySQL/TiDB database (local or cloud)
+- A GitHub App (App ID, Installation ID, Webhook Secret, Private Key)
+- An LLM API key (Moonshot Kimi via LiteLLM)
 
-**Requirements:** Python 3.13+
+### Local (Docker Compose)
+1. Copy env example and fill in values:
+	- `cp backend/.env.example backend/.env`
+2. Ensure your GitHub App private key PEM exists; compose expects:
+	- `backend/test/macrozero-app.2025-09-07.private-key.pem`
+	- Or update `docker-compose.yml` secret path accordingly
+3. Run:
+	- `docker compose up --build`
+4. Open:
+	- Backend: http://localhost:8000
+	- Health: http://localhost:8000/healthz
+
+### Local (direct)
+From `backend/` (requires Python 3.13 & uv):
+- `uv export --frozen --no-dev -o requirements.txt`
+- `uv pip install --system -r requirements.txt`
+- `uvicorn server:app --host 0.0.0.0 --port 8000`
+
+## Backend
+- Framework: FastAPI + SQLModel (TiDB/MySQL)
+- Agents: Google ADK SequentialAgent (reviewer → packager)
+- LLM: LiteLLM with Moonshot Kimi
+- GitHub App: Installation token auth; Create Review API
+- Resilience: strict tool‑call prompts + server‑side fallback
+- Health: `/healthz`
+
+### Environment variables (backend)
+Required:
+- `DB_HOST`, `DB_PORT`, `DB_USERNAME`, `DB_PASSWORD`, `DB_DATABASE`
+- `GITHUB_APP_ID`, `GITHUB_INSTALLATION_ID`, `GITHUB_WEBHOOK_SECRET`
+- `GITHUB_PRIVATE_KEY_PATH` (file path inside container/VM)
+- `KIMI_API_KEY`
+Optional:
+- `KIMI_API_BASE_URL`, `INIT_DB_ON_STARTUP` (default true)
+
+### Webhooks
+Set your GitHub App webhook URL to:
+- `POST /webhook`
+- Signature verified via `GITHUB_WEBHOOK_SECRET`
+
+### Review flow
+1. Webhook hits FastAPI → orchestrator agent
+2. Reviewer step produces structured analysis (JSON)
+3. Packager step calls `create_pr_review` with line + side comments
+4. Fallback: if model prints JSON instead of tool call, server posts it
+
+## Frontend
+- Vite + React + Tailwind
+- API base: `VITE_API_BASE_URL` (default `http://localhost:8000`)
+
+### Commands
+From `frontend/`:
+- `npm install`
+- `npm run dev` → http://localhost:5173
+- `npm run build`
+- `npm run preview`
+
+### CORS
+Backend allows:
+- http://localhost:5173
+- https://macrozero.vercel.app/
+Adjust `server.py` for your deployed frontend origin.
+
+## Deployment
+- Container: `backend/Dockerfile` (binds to `${PORT:-8000}`)
+- Cloud Run: set envs; mount GitHub key via Secret Manager; consider `INIT_DB_ON_STARTUP=false` on first deploy
+
+## Troubleshooting
+- 422 on review post → ensure comments use `line` + `side` (not `position`)
+- Model didn’t call tool → server fallback posts review if JSON is returned
+- Cloud Run timeout → confirm `${PORT}` binding and `/healthz` works; disable DB init on startup
+
+## Roadmap
+- Diff→HEAD line mapping for precise inline anchors
+- Review idempotency to prevent duplicates
+- Structured logging and telemetry
+- Issue triage agent + auto‑labels
+- Replay harness for safe end‑to‑end tests

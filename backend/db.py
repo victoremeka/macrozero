@@ -75,8 +75,6 @@ def get_db_url():
     )
     return url
 
-get_db_url()
-
 def get_session():
     with Session(engine) as session:
         yield session
