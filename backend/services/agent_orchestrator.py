@@ -1,7 +1,7 @@
 from google.adk.agents import LlmAgent
 from google.adk.runners import Runner
 from google.genai import types
-from google.adk.sessions import InMemorySessionService, DatabaseSessionService
+from google.adk.sessions import InMemorySessionService
 from agents.tools import model, create_pr_review
 import json
 import logging
