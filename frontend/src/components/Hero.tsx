@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { BackgroundBeams } from "./ui/background-beams";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
 import { useState } from "react";
@@ -11,14 +11,12 @@ export function Hero() {
   const navigate = useNavigate();
 
   const handleGetStarted = () => {
-
-
     if (isAuthenticated) {
       navigate("/dashboard");
     } else if (buttonText === "Get Started") {
       setButtonText("Continue with GitHub");
     } else {
-      setButtonText("Loading...")
+      setButtonText("Loading...");
       login();
     }
   };
@@ -39,8 +37,8 @@ export function Hero() {
 
         {/* Subheading with better hierarchy */}
         <p className="text-xl md:text-2xl text-gray-300 max-w-3xl mx-auto mb-4 font-light leading-relaxed">
-          Multi-agent system that understands your codebase, automates GitHub workflows,
-          and remembers every fix
+          Multi-agent system that understands your codebase, automates GitHub
+          workflows, and remembers every fix
         </p>
 
         <br />
@@ -63,7 +61,6 @@ export function Hero() {
             </>
           )}
         </Button>
-
       </div>
 
       <BackgroundBeams />
