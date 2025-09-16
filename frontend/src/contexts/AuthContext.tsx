@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useEffect } from "react";
 import type { ReactNode } from "react";
 import type { User } from "@/lib/auth";
 import { API_BASE_URL, getCurrentUser, logout as logoutAPI } from "@/lib/auth";
+import axios from "axios";
 
 interface AuthContextType {
   user: User | null;
@@ -39,8 +40,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const login = async () => {
     // Redirect to GitHub OAuth
-    const response = await fetch(`${API_BASE_URL}/auth/login`);
-    const data = await response.json();
+    const response = await axios.get(`${API_BASE_URL}/auth/login`);
+    const data = response.data;
     window.location.href = data.url;
   };
 

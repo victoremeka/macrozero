@@ -1,3 +1,5 @@
+import axios from "axios";
+
 // API configuration
 export const API_BASE_URL = process.env.API_BASE_URL!;
 
@@ -24,8 +26,8 @@ class AuthAPI {
    * Redirect to GitHub OAuth login
    */
   async initiateLogin(): Promise<void> {
-    const response = await fetch(`${API_BASE_URL}/auth/login`);
-    const data = await response.json();
+    const response = await axios.get(`${API_BASE_URL}/auth/login`);
+    const data = response.data;
     window.location.href = data.url;
   }
 
@@ -34,12 +36,12 @@ class AuthAPI {
    */
   async getCurrentUser(): Promise<User | null> {
     try {
-      const response = await fetch(`${this.baseUrl}/auth/me`, {
-        credentials: 'include', // Include HTTP-only cookies
+      const response = await axios.get(`${this.baseUrl}/auth/me`, {
+        withCredentials: true, // Include HTTP-only cookies
       });
 
-      if (response.ok) {
-        const user = await response.json();
+      if (response.status === 200) {
+        const user = response.data;
         return user;
       } else if (response.status === 401) {
         return null; // Not authenticated
@@ -57,36 +59,17 @@ class AuthAPI {
    */
   async logout(): Promise<void> {
     try {
-      const response = await fetch(`${this.baseUrl}/auth/logout`, {
-        method: 'POST',
-        credentials: 'include',
+      const response = await axios.post(`${this.baseUrl}/auth/logout`, {
+        withCredentials: true,
       });
 
-      if (!response.ok) {
+      if (response.status !== 200) {
         throw new Error(`Logout failed: ${response.status}`);
       }
     } catch (error) {
       console.error('Logout failed:', error);
       throw error;
     }
-  }
-
-  /**
-   * Make authenticated API request
-   */
-  async authenticatedRequest(endpoint: string, options: RequestInit = {}): Promise<Response> {
-    const response = await fetch(`${this.baseUrl}${endpoint}`, {
-      ...options,
-      credentials: 'include', // Include HTTP-only cookies
-    });
-
-    if (response.status === 401) {
-      // Redirect to login if unauthorized
-      this.initiateLogin();
-      throw new Error('Unauthorized - redirecting to login');
-    }
-
-    return response;
   }
 }
 
@@ -97,5 +80,3 @@ export const authAPI = new AuthAPI();
 export const redirectToLogin = () => authAPI.initiateLogin();
 export const getCurrentUser = () => authAPI.getCurrentUser();
 export const logout = () => authAPI.logout();
-export const makeAuthenticatedRequest = (endpoint: string, options?: RequestInit) => 
-  authAPI.authenticatedRequest(endpoint, options);

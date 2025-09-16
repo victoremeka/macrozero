@@ -6,6 +6,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { CheckCircle, XCircle, Loader2, Github } from "lucide-react";
 import { API_BASE_URL } from "../../lib/auth";
+import axios from "axios";
 
 export function CallbackPage() {
   const [searchParams] = useSearchParams();
@@ -43,23 +44,21 @@ export function CallbackPage() {
         // The backend will handle the OAuth exchange and set the cookie
         const callbackUrl = `${API_BASE_URL}/auth/callback`;
 
-        const response = await fetch(callbackUrl, {
-          method: "POST",
-          body: JSON.stringify({ code, state }),
+        const response = await axios.post(callbackUrl, { code, state }, {
           headers: {
             "Content-Type": "application/json",
           },
-          credentials: "include", // Include cookies
+          withCredentials: true, // Include cookies
         });
 
-        if (response.ok) {
+        if (response.status === 200) {
           // If the response is successful, refresh the user context
           await refreshUser();
           setStatus("success");
           navigate("/dashboard");
         } else {
           // If the response is not successful, extract the error message
-          const errorData = await response.json();
+          const errorData = response.data;
           setStatus("error");
           setErrorMessage(errorData.message || "Unknown error");
         }
