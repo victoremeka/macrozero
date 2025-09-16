@@ -53,17 +53,17 @@ Follow this generation guidance:
 - Write a concise overall review body (2–4 sentences) that summarizes key issues and suggestions.
 - Tone should be professional, constructive, and concise (like a GitHub code review).
 
-2) Comments:
-- Each comment must map to a valid line or position in the provided diff.
+2) Comments (line + side ONLY — do NOT use position):
+- Each inline comment MUST include: path, line, side ("RIGHT" for head/new code; use "LEFT" only if the diff shows a deletion and you can determine the base/old line).
+- Default side to "RIGHT" when uncertain. Prefer commenting on changed/added lines.
 - Keep comments focused: one issue per comment. Merge duplicates on the same code element.
-- Prioritize correctness > security > performance > maintainability > readability > style.
 - Max 15 comments, each ≤ 1000 characters.
-- No duplicate (path,line) or (path,position) pairs.
-- If suggesting a multi-line refactor, reference the first line only.
-- Use either `line` or `position`, never both.
+- Deduplicate by (path, line, side). Do not emit duplicates.
+- If suggesting a multi-line range, include start_line and start_side; otherwise omit them.
+- If you cannot confidently map an issue to a valid (path, line, side) from the diff, omit the inline comment for that issue and rely on the overall body instead (to avoid API errors).
 
 3) Event selection:
-- REQUEST_CHANGES if any correctness, security, data loss, or major performance issue exists.
+- REQUEST_CHANGES if any correctness, security, data loss, a major performance issue exists, or the code will fail to run and raise exceptions.
 - COMMENT if non-critical issues exist.
 - APPROVE if no material issues remain.
 
@@ -72,7 +72,7 @@ Follow this generation guidance:
 - repo = webhook context 'repo'
 - number = webhook context 'number'
 - body = synthesized body
-- comments = list of inline comments
+- comments = list of inline comments (may be empty if mapping is uncertain)
 - event = chosen per above rules
 
 Response requirement:
