@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { CheckCircle, XCircle, Loader2, Github } from "lucide-react";
+import { API_BASE_URL } from "../../lib/auth";
 
 export function CallbackPage() {
   const [searchParams] = useSearchParams();
@@ -40,7 +41,7 @@ export function CallbackPage() {
 
       try {
         // The backend will handle the OAuth exchange and set the cookie
-        const callbackUrl = `http://localhost:8000/auth/callback`;
+        const callbackUrl = `${API_BASE_URL}/auth/callback`;
 
         const response = await fetch(callbackUrl, {
           method: "POST",

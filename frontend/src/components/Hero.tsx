@@ -39,8 +39,8 @@ export function Hero() {
 
         {/* Subheading with better hierarchy */}
         <p className="text-xl md:text-2xl text-gray-300 max-w-3xl mx-auto mb-4 font-light leading-relaxed">
-          Multi-agent system that understands your codebase, automate GitHub workflows,
-          and remember every fix
+          Multi-agent system that understands your codebase, automates GitHub workflows,
+          and remembers every fix
         </p>
 
         <br />
