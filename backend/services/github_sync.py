@@ -218,7 +218,7 @@ def handle_pull_request_review(payload: dict, session: Session, repo: Repository
 
     pr_number = payload["pull_request"]["number"]
 
-    pr_db = session.exec(select(PullRequest).where(PullRequest.repo_id == repo.id, PullRequest.number == pr_number)).one()
+    pr_db = session.exec(select(PullRequest).where(PullRequest.repo_id == repo.id, PullRequest.number == pr_number)).one_or_none()
     
     review_id = review["id"]
     author_login = review["user"]["login"]
@@ -226,25 +226,25 @@ def handle_pull_request_review(payload: dict, session: Session, repo: Repository
     review_type = review["state"]
     submitted_at = review.get("submitted_at")
 
+    if pr_db:
+        if action == "dismissed":
+            r = session.exec(select(Review).where(Review.pr_id == pr_db.id, Review.review_id == review_id)).one()
+            session.delete(r)
+            session.flush()
 
-    if action == "dismissed":
-        r = session.exec(select(Review).where(Review.pr_id == pr_db.id, Review.review_id == review_id)).one()
-        session.delete(r)
-        session.flush()
-
-    try:
-        upsert_review(
-            session=session,
-            pr=pr_db,
-            review_id=review_id,
-            comment_text=comment_text,
-            author_login=author_login,
-            review_type=review_type,
-            created_at=datetime.fromisoformat(submitted_at.replace("Z", "+00:00")) if submitted_at else datetime.now(timezone.utc),
-        )
-    except SQLAlchemyError as e:
-        print("Database error:", e)
-        session.rollback()
+        try:
+            upsert_review(
+                session=session,
+                pr=pr_db,
+                review_id=review_id,
+                comment_text=comment_text,
+                author_login=author_login,
+                review_type=review_type,
+                created_at=datetime.fromisoformat(submitted_at.replace("Z", "+00:00")) if submitted_at else datetime.now(timezone.utc),
+            )
+        except SQLAlchemyError as e:
+            print("Database error:", e)
+            session.rollback()
 
 def handle_pull_request_review_comment(payload: dict, session: Session, repo: Repository) -> None:
     """Ignore individual review comment events.
