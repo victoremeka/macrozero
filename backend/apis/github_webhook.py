@@ -1,8 +1,13 @@
 import hmac, hashlib
+from sqlmodel import Session
+from db import upsert_repo
+
 from fastapi import HTTPException, Request
-from integrations.github_client import (comment_on_pr, WEBHOOK_SECRET)
-from services.github_sync import *
-from db import engine
+from integrations.github_client import (WEBHOOK_SECRET, use_installation)
+from services.github_sync import handle_issue, handle_pull_request, handle_pull_request_review
+
+
+APP_NAME = "macrozero"
 
 def verify_signature(raw: bytes, sig_header: str | None):
     """
@@ -39,38 +44,40 @@ def verify_signature(raw: bytes, sig_header: str | None):
         raise HTTPException(403, "Bad signature")
 
 
-async def handle_webhook_payload(request: Request):
+async def handle_webhook_payload(request: Request, session: Session):
     raw = await request.body()
     try:
         verify_signature(raw, request.headers.get("X-Hub-Signature-256"))
     except HTTPException as e:
         raise
+
     event = request.headers.get("X-GitHub-Event")
     payload : dict = await request.json()
 
-    # ---- Debug Helpers ----
-    print("event ->", event, " action ->",payload.get("action"))
-    dump_to_json("payload_response", payload)
-    
+    inst_id = payload.get("installation", {}).get("id")
 
-    with Session(engine) as session:
-        
+    print("event ->", event, " action ->", payload.get("action"))
+
+    async def _process():
         repo = upsert_repo(
             session=session,
             gh_id=payload["repository"]["id"],
             owner=payload["repository"]["owner"]["login"]
         )
-        
+
         if event == "pull_request":
-            handle_pull_request(payload=payload, session=session, repo=repo)
+            res = await handle_pull_request(payload=payload, session=session, repo=repo)
         elif event == "pull_request_review":
             handle_pull_request_review(payload=payload, session=session, repo=repo)
         elif event == "pull_request_review_comment":
-            handle_pull_request_review_comment(payload=payload, session=session, repo=repo)
+            print("Ignored: pull_request_review_comment")
+            return
         elif event == "issues":
             handle_issue(payload=payload, session=session, repo=repo)
-        else:
-            return {"ignored": event}
-        
         session.commit()
-    
+
+    if inst_id:
+        with use_installation(inst_id):
+            await _process()
+    else:
+        await _process()

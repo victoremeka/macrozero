@@ -14,6 +14,7 @@ from models import (
     Issue,
     IssueFile
 )
+from pytidb import TiDBClient
 
 dotenv.load_dotenv()
 
@@ -26,6 +27,15 @@ if not db_port is None:
     db_port = int(db_port)
 
 ca_path = os.path.abspath("isrgrootx1.pem")
+
+# tidb_client = TiDBClient.connect(
+#     host=db_host,
+#     port=db_port,
+#     username=db_username,
+#     password=db_password,
+#     database=db_database,
+#     ensure_db=True,
+# )
 
 def get_db_engine():
     connect_args = {}
@@ -46,7 +56,7 @@ def get_db_engine():
         ),
         connect_args=connect_args,
         pool_pre_ping=True,
-        echo=True, # TODO: take out in prod
+        # echo=True, # TODO: take out in prod
         future=True
     )
 
@@ -54,6 +64,19 @@ engine = get_db_engine()
 
 def create_db_and_tables():
     SQLModel.metadata.create_all(engine)
+
+def get_db_url():
+    url = URL.create(
+        drivername="mysql+pymysql",
+        username=db_username,
+        password=db_password,
+        host=db_host,
+        port=db_port, # type: ignore
+        database=db_database,
+    )
+    return url
+
+get_db_url()
 
 def get_session():
     with Session(engine) as session:
@@ -182,5 +205,3 @@ def link_issue_file(session: Session, issue: Issue, file_path: str, increment: i
     session.flush()
     session.refresh(link)
     return link
-
-#TODO: Add helper for review upserts
