@@ -23,8 +23,10 @@ class AuthAPI {
   /**
    * Redirect to GitHub OAuth login
    */
-  initiateLogin(): void {
-    window.location.href = `${this.baseUrl}/auth/login`;
+  async initiateLogin(): Promise<void> {
+    const response = await fetch(`${API_BASE_URL}/auth/login`);
+    const data = await response.json();
+    window.location.href = data.url;
   }
 
   /**

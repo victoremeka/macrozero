@@ -30,7 +30,7 @@ async def github_login():
         f"&scope=user:email"
         f"&state={state}"
     )
-    return RedirectResponse(url=github_auth_url)
+    return {"url": github_auth_url}
 
 class CallbackInfo(BaseModel):
     code: str

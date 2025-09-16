@@ -37,9 +37,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   };
 
-  const login = () => {
+  const login = async () => {
     // Redirect to GitHub OAuth
-    window.location.href = `${API_BASE_URL}/auth/login`;
+    const response = await fetch(`${API_BASE_URL}/auth/login`);
+    const data = await response.json();
+    window.location.href = data.url;
   };
 
   const logout = async () => {
