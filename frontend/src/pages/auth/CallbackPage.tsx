@@ -1,25 +1,23 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { CheckCircle, XCircle, Loader2, Github } from "lucide-react";
-import { API_BASE_URL } from "../../lib/auth";
 
 export function CallbackPage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { refreshUser } = useAuth();
+  const { handleCallback } = useAuth();
   const [status, setStatus] = useState<"loading" | "success" | "error">(
     "loading"
   );
   const [errorMessage, setErrorMessage] = useState<string>("");
 
   useEffect(() => {
-    const handleCallback = async () => {
+    const processCallback = async () => {
       const code = searchParams.get("code");
-      const state = searchParams.get("state");
       const error = searchParams.get("error");
       const errorDescription = searchParams.get("error_description");
 
@@ -33,49 +31,36 @@ export function CallbackPage() {
       }
 
       // Validate required parameters
-      if (!code || !state) {
+      if (!code) {
         setStatus("error");
-        setErrorMessage("Missing authorization code or state parameter");
+        setErrorMessage("Missing authorization code");
         return;
       }
 
       try {
-        // The backend will handle the OAuth exchange and set the cookie
-        const callbackUrl = `${API_BASE_URL}/auth/callback`;
+        // Use the auth context's handleCallback method
+        await handleCallback(code);
+        setStatus("success");
 
-        const response = await fetch(callbackUrl, {
-          method: "POST",
-          body: JSON.stringify({ code, state }),
-          headers: {
-            "Content-Type": "application/json",
-          },
-          credentials: "include", // Include cookies
-        });
-
-        if (response.ok) {
-          // If the response is successful, refresh the user context
-          await refreshUser();
-          setStatus("success");
+        // Small delay for better UX, then navigate
+        setTimeout(() => {
           navigate("/dashboard");
-        } else {
-          // If the response is not successful, extract the error message
-          const errorData = await response.json();
-          setStatus("error");
-          setErrorMessage(errorData.message || "Unknown error");
-        }
+        }, 1500);
       } catch (error) {
         console.error("Callback processing error:", error);
         setStatus("error");
-        setErrorMessage("Network error during authentication");
+        setErrorMessage(
+          error instanceof Error ? error.message : "Authentication failed"
+        );
       }
     };
 
-    handleCallback();
-  }, [searchParams, navigate, refreshUser]);
+    processCallback();
+  }, [searchParams, navigate, handleCallback]);
 
   const handleRetry = () => {
     // Redirect back to login
-    navigate("/login");
+    navigate("/");
   };
 
   const renderContent = () => {

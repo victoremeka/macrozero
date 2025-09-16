@@ -6,7 +6,6 @@ from typing import Optional
 from pydantic import BaseModel
 import requests
 from utils.jwt_manager import create_access_token, verify_token
-from utils.state_store import oauth_state_store
 
 # GitHub OAuth Configuration
 GITHUB_CLIENT_ID = os.getenv("GITHUB_CLIENT_ID")
@@ -23,34 +22,25 @@ router = APIRouter(prefix="/auth", tags=["authentication"])
 @router.get("/login")
 async def github_login():
     """Redirect to GitHub OAuth"""
-    state = oauth_state_store.generate_state()
     github_auth_url = (
         f"https://github.com/login/oauth/authorize"
         f"?client_id={GITHUB_CLIENT_ID}"
         f"&scope=user:email"
-        f"&state={state}"
     )
-    return RedirectResponse(url=github_auth_url)
+    return {"url": github_auth_url}
+
 
 class CallbackInfo(BaseModel):
     code: str
-    state: str
+
 
 @router.post("/callback")
 async def github_callback(callback_info: CallbackInfo, response: Response):
     """Handle GitHub OAuth callback"""
     code = callback_info.code
-    state = callback_info.state
 
     if not code:
         raise HTTPException(status_code=400, detail="Authorization code not provided")
-
-    if not state:
-        raise HTTPException(status_code=400, detail="State parameter missing")
-
-    # Validate state to prevent CSRF attacks
-    if not oauth_state_store.validate_state(state):
-        raise HTTPException(status_code=400, detail="Invalid or expired state")
 
     token_response = requests.post(
         "https://github.com/login/oauth/access_token",
@@ -149,5 +139,3 @@ async def logout(response: Response):
         samesite="lax",
     )
     return {"message": "Successfully logged out"}
-
-

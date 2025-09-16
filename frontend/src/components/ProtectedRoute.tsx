@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 
 interface ProtectedRouteProps {
@@ -26,7 +26,7 @@ export function ProtectedRoute({ children, fallback }: ProtectedRouteProps) {
     if (fallback) {
       return <>{fallback}</>;
     }
-      navigate("/");
+    navigate("/");
   }
 
   return <>{children}</>;
