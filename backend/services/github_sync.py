@@ -33,7 +33,7 @@ def embed(str):
         model="gemini-embedding-001",
         contents=str,
         config=types.EmbedContentConfig(output_dimensionality=768),
-    )
+    ).embeddings
 
 
 from db import (
