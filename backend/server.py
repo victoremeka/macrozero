@@ -30,6 +30,11 @@ app.add_middleware(CORSMiddleware, allow_origins=["http://localhost:5173", "http
 
 # Include routers
 app.include_router(auth_router)
+# Lightweight health endpoint (no auth, no DB)
+@app.get("/healthz")
+async def healthz():
+    return {"status": "ok"}
+
 
 
 @app.post("/webhook")
