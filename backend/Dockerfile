@@ -11,14 +11,13 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
-# System deps (curl for uv installer)
+# Minimal system deps (CA certs for TLS)
 RUN apt-get update \
- && apt-get install -y --no-install-recommends curl ca-certificates \
+ && apt-get install -y --no-install-recommends ca-certificates \
  && rm -rf /var/lib/apt/lists/*
 
-# Install uv (fast Python package manager) and add to PATH
-RUN curl -LsSf https://astral.sh/uv/install.sh | sh -s -- --yes
-ENV PATH="/root/.local/bin:${PATH}"
+# Install uv via pip (CI-friendly)
+RUN python -m pip install --no-cache-dir uv
 
 # Copy dependency files first for better layer caching
 COPY pyproject.toml uv.lock ./
