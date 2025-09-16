@@ -1,3 +1,11 @@
+"""Agent-accessible tools for GitHub interactions and search.
+
+Exposes:
+    create_pr_review: Submit a GitHub pull request review with optional inline comments.
+    mcp_tools: Filtered MCP toolset for selected GitHub operations.
+    search_tool: Agent tool wrapping a Google search specialist agent.
+"""
+
 from integrations.github_client import *
 from typing import Literal
 from google.adk.tools import google_search
@@ -24,7 +32,7 @@ mcp_tools = MCPToolset(
     connection_params=StreamableHTTPConnectionParams(
         url="https://api.githubcopilot.com/mcp/",
         headers={
-            "Authorization": "Bearer " + os.getenv("GITHUB_PERSONAL_ACCESS_TOKEN"),
+            "Authorization": f"Bearer {os.getenv('GITHUB_PERSONAL_ACCESS_TOKEN','')}",
         },
     ),
 
@@ -39,11 +47,24 @@ mcp_tools = MCPToolset(
 )
 
 def create_pr_review(owner: str, repo: str, number: int, body: str, comments: list[dict], event: Literal["COMMENT","REQUEST_CHANGES","APPROVE"] = "COMMENT"):
+    """Create a pull request review.
+
+    Args:
+        owner: Repository owner login.
+        repo: Repository name.
+        number: Pull request number.
+        body: Overall review body text.
+        comments: Inline comment dicts per GitHub API (path, position/line, body, etc.).
+        event: Review action: COMMENT (default), REQUEST_CHANGES, APPROVE.
+
+    Returns:
+        dict: GitHub API JSON response.
+    """
     payload = {
         "body": body,
         "event": event,
-        "comments": comments, 
-   }
+        "comments": comments,
+    }
 
     resp = gh_json(
         method="post",
