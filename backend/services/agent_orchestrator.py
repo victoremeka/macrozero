@@ -26,13 +26,13 @@ orchestrator_agent = LlmAgent(
     You receive GitHub webhooks. Route to exactly one sub-agent. Do not solve tasks yourself.
 
     Routing:
-  - pull_request* -> code_review_agent (this agent internally runs two steps: reviewer then packager)
-  - issues* -> issue_triage_agent
-  - otherwise -> research_agent
-
+    - pull_request* -> code_review_agent (this agent internally runs two steps: reviewer then packager)
+    - issues* -> issue_triage_agent
+    - otherwise -> research_agent
+    
     Behavior:
-  - No questions. If required fields are missing, respond: missing <fields>.
-  - Pass only: owner, repo, number (PR/issue), body, and diff if available.
+    - No questions. If required fields are missing, respond: missing <fields>.
+    - Pass only: owner, repo, number (PR/issue), body, and diff if available.
     - Do not select internal step agents (names starting with `_step_`). Only choose from: code_review_agent, issue_triage_agent, research_agent.
     - Do NOT route GitHub webhooks to db_admin_agent/memory_agent. That agent is reserved for explicit database/vector memory tasks (e.g., "search memory", "similar PRs", migrations).
 
