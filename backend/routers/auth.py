@@ -30,11 +30,13 @@ async def github_login():
         f"&scope=user:email"
         f"&state={state}"
     )
-    return {"url": github_auth_url}
+    return {"url": github_auth_url, "state": state}
+
 
 class CallbackInfo(BaseModel):
     code: str
     state: str
+
 
 @router.post("/callback")
 async def github_callback(callback_info: CallbackInfo, response: Response):
@@ -149,5 +151,3 @@ async def logout(response: Response):
         samesite="lax",
     )
     return {"message": "Successfully logged out"}
-
-

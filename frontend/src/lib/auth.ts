@@ -14,6 +14,7 @@ export interface AuthResponse {
 
 export interface LoginResponse {
   url: string;
+  state: string;
 }
 
 class AuthAPI {
@@ -27,6 +28,11 @@ class AuthAPI {
       
       if (!data.url) {
         throw new Error('No login URL received from server');
+      }
+      
+      // Store state in sessionStorage for CSRF protection
+      if (data.state) {
+        sessionStorage.setItem('oauth_state', data.state);
       }
       
       window.location.href = data.url;
@@ -69,6 +75,9 @@ class AuthAPI {
       if (response.status !== 200) {
         throw new Error(`Logout failed with status: ${response.status}`);
       }
+      
+      // Clear any stored OAuth state
+      sessionStorage.removeItem('oauth_state');
     } catch (error) {
       console.error('Logout failed:', getErrorMessage(error));
       throw new Error('Failed to logout. Please try again.');
@@ -80,6 +89,12 @@ class AuthAPI {
    */
   async handleCallback(code: string, state: string): Promise<void> {
     try {
+      // Validate state parameter to prevent CSRF attacks
+      const storedState = sessionStorage.getItem('oauth_state');
+      if (!storedState || storedState !== state) {
+        throw new Error('Invalid state parameter. Possible CSRF attack.');
+      }
+      
       const response = await api.post<AuthResponse>('/auth/callback', {
         code,
         state,
@@ -88,7 +103,12 @@ class AuthAPI {
       if (response.status !== 200) {
         throw new Error(`Callback failed with status: ${response.status}`);
       }
+      
+      // Clear the stored state after successful authentication
+      sessionStorage.removeItem('oauth_state');
     } catch (error) {
+      // Clear state on any error
+      sessionStorage.removeItem('oauth_state');
       console.error('OAuth callback failed:', getErrorMessage(error));
       throw new Error('Authentication failed. Please try again.');
     }
