@@ -16,7 +16,25 @@ from integrations.github_client import *
 from models import *
 from sqlalchemy.exc import SQLAlchemyError
 from services.agent_orchestrator import call_agent_async
-# from tidb_vector import 
+from datetime import datetime, timezone
+from pytidb import TiDBClient
+from google import genai
+from google.genai import types
+import os, dotenv
+
+dotenv.load_dotenv()
+
+client = genai.Client(
+    api_key=os.getenv("GEMINI_API_KEY"),
+)
+
+def embed(str):
+    return client.models.embed_content(
+        model="gemini-embedding-001",
+        contents=str,
+        config=types.EmbedContentConfig(output_dimensionality=768),
+    )
+
 
 from db import (
     upsert_repo,
@@ -27,10 +45,6 @@ from db import (
     link_commit_to_pr,
     link_issue_file,
 )
-from datetime import datetime, timezone  # added
-import lmstudio as lms #TODO: take out in prod.
-
-model = lms.embedding_model("nomic-embed-text-v1.5") # TODO take out in prod
 
 def dump_to_json(name: str, data) -> None:
     """Write arbitrary data to a JSON file under test/ for debugging.
@@ -101,7 +115,7 @@ def add_pr_commits_to_db(
             sha=commit["sha"],
             message=msg,
             author_login=commit["author"]["login"],
-            diff_embedding=model.embed(out), # type: ignore
+            diff_embedding=embed(out), # type: ignore
         )
         link_commit_to_pr(
             session=session,
@@ -145,7 +159,7 @@ async def handle_pull_request(payload: dict, session: Session, repo: Repository)
     else:
         text = "title: " + pr["title"]
     
-    embedding = model.embed(text)
+    embedding = embed(text)
 
     diff = get_pull_request_diff(owner=repo_owner, repo=repo_name, number=number)
 
@@ -295,7 +309,7 @@ def handle_issue(payload: dict, session: Session, repo: Repository) -> None:
                 repo=repo,
                 number=issue_number,
                 state=issue_state,
-                content_embedding=model.embed(content),  # type: ignore
+                content_embedding=embed(content),  # type: ignore
             )
         except SQLAlchemyError as e:
             print("Database error:", e)
