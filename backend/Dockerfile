@@ -43,5 +43,5 @@ ENV PORT=8000
 # HEALTHCHECK --interval=30s --timeout=3s --start-period=20s --retries=3 \
 #   CMD python -c "import urllib.request as r; r.urlopen('http://127.0.0.1:8000/').read()" || exit 1
 
-# Entrypoint
-CMD ["python", "-m", "uvicorn", "server:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1"]
+# Entrypoint: bind to Cloud Run's provided $PORT (defaults to 8000 locally)
+CMD ["sh", "-c", "python -m uvicorn server:app --host 0.0.0.0 --port ${PORT:-8000} --workers 1"]
