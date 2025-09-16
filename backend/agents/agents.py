@@ -20,26 +20,27 @@ sanitizer_agent = Agent(
     tools=[create_pr_review]
 )
 
-code_review_agent = SequentialAgent(
-    name="code_review_agent",
-    description="Code review multi agent system",
-    sub_agents=[reviewer_agent, sanitizer_agent],
-)
-
-issue_triage_agent = Agent(
-    name="issue_triage_agent",
-    model=model,
-    description="Triages issues and extracts repro/owners/severity.",
-)
-
-db_admin_agent = Agent(
+memory_agent = Agent(
     name="db_admin_agent",
     model=model,
     description="Maintains embeddings DB and migrations.",
+    tools=[]
 )
 
 research_agent = Agent(
     name="research_agent",
     model=model,
     description="Searches prior fixes and summarizes findings.",
+)
+
+code_review_agent = SequentialAgent(
+    name="code_review_agent",
+    description="Code review multi agent system",
+    sub_agents=[reviewer_agent, sanitizer_agent],
+)
+
+issue_triage_resolution_agent = SequentialAgent(
+    name="issue_triage_agent",
+    description="Triages issues and extracts repro/owners/severity. Then opens pull requests to fix them",
+    sub_agents=[research_agent]
 )
