@@ -23,7 +23,9 @@ RUN python -m pip install --no-cache-dir uv
 COPY pyproject.toml uv.lock ./
 
 # Install dependencies into the system environment (no dev deps)
-RUN uv sync --frozen --no-dev --system
+# Use export + pip install to avoid unsupported `--system` usage with `uv sync` in CI
+RUN uv export --frozen --no-dev -o requirements.txt \
+ && uv pip install --system -r requirements.txt
 
 # Copy application code
 COPY . /app
