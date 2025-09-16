@@ -20,9 +20,6 @@ async def lifespan(app: FastAPI):
             logging.warning("DB init skipped due to error: %s", e)
     yield
     print("Application shutdown: Cleaning up resources...")
-    # Example: Close the database connection
-    # await db_connection.close()
-
 
 app = FastAPI(lifespan=lifespan)
 

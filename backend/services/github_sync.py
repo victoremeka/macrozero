@@ -17,7 +17,6 @@ from models import *
 from sqlalchemy.exc import SQLAlchemyError
 from services.agent_orchestrator import call_agent_async
 from datetime import datetime, timezone
-from pytidb import TiDBClient
 from google import genai
 from google.genai import types
 import os, dotenv
