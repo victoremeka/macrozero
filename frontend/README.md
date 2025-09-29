@@ -1,9 +1,9 @@
-# macrozero frontend
+# Frontend on hold
 
-Web interface for GitHub workflow automation.
+The previous Vite/React UI has been removed while the backend stabilizes.
 
-## Status
+- API development continues under `backend/`
+- When the UI rebuild begins, this directory will host the new app
+- Contributions are welcome once a fresh frontend plan lands
 
-🚧 **Coming Soon** - Frontend development in progress.
-
-Development setup instructions will be added once the frontend is implemented.
+Until then, no build or runtime assets live here.

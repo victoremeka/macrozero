@@ -61,21 +61,9 @@ Set your GitHub App webhook URL to:
 4. Fallback: if model prints JSON instead of tool call, server posts it
 
 ## Frontend
-- Vite + React + Tailwind
-- API base: `VITE_API_BASE_URL` (default `http://localhost:8000`)
-
-### Commands
-From `frontend/`:
-- `npm install`
-- `npm run dev` → http://localhost:5173
-- `npm run build`
-- `npm run preview`
-
-### CORS
-Backend allows:
-- http://localhost:5173
-- https://macrozero.vercel.app/
-Adjust `server.py` for your deployed frontend origin.
+The initial Vite/React UI has been removed while the backend hardens. A rebuilt
+interface will land here later; until then the `frontend/` folder only contains a
+placeholder README.
 
 ## Deployment
 - Container: `backend/Dockerfile` (binds to `${PORT:-8000}`)
