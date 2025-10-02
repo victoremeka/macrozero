@@ -135,7 +135,6 @@ def _installation_token() -> str:
 
     _token_cache[inst_id] = {"token": data["token"], "exp": exp_epoch}
     return data["token"]
-print(_installation_token())
 
 def _headers(extra: Optional[Dict[str, str]] = None) -> Dict[str, str]:
     """
