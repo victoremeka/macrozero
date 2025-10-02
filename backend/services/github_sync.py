@@ -28,11 +28,14 @@ client = genai.Client(
 )
 
 def embed(str):
-    return client.models.embed_content(
+    embeddings = client.models.embed_content(
         model="gemini-embedding-001",
         contents=str,
         config=types.EmbedContentConfig(output_dimensionality=768),
     ).embeddings
+
+    if embeddings:
+        return embeddings[0].values
 
 
 from db import (

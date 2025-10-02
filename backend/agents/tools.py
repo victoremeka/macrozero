@@ -21,11 +21,7 @@ dotenv.load_dotenv()
 KIMI_API_KEY = os.getenv("KIMI_API_KEY")
 KIMI_API_BASE_URL = os.getenv("KIMI_API_BASE_URL")
 
-model = LiteLlm(
-    model="moonshot/kimi-k2-turbo-preview",
-    api_key=KIMI_API_KEY,            
-    base_url=KIMI_API_BASE_URL,
-)
+model = "gemini-2.5-pro"
 
 
 mcp_tools = MCPToolset(

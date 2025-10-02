@@ -7,7 +7,6 @@ from sqlmodel import Session
 from db import create_db_and_tables, get_session
 from apis.github_webhook import handle_webhook_payload
 from routers.auth import get_current_user, router as auth_router
-from google.adk.sessions import DatabaseSessionService, InMemorySessionService
 
 
 @asynccontextmanager
