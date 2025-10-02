@@ -110,7 +110,7 @@ def _issue_jwt() -> str:
         should not be cached beyond its expiration.
     """
     now = int(time.time())
-    payload = {"iat": now - 30, "exp": now + 600, "iss": APP_ID}
+    payload = {"iat": now - 30, "exp": now + 540, "iss": APP_ID}
     return jwt.encode(payload, _private_key(), algorithm="RS256")
 
 def _installation_token() -> str:
@@ -135,6 +135,7 @@ def _installation_token() -> str:
 
     _token_cache[inst_id] = {"token": data["token"], "exp": exp_epoch}
     return data["token"]
+print(_installation_token())
 
 def _headers(extra: Optional[Dict[str, str]] = None) -> Dict[str, str]:
     """
