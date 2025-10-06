@@ -15,8 +15,6 @@ class IssueState(enum.Enum):
     OPEN = "open"
     CLOSED = "closed"
 
-# class ReviewState(enum.Enum):
-
 
 class Repository(SQLModel, table=True):
     id : int | None = Field(default=None, primary_key=True)

@@ -17,9 +17,9 @@ AI code review co‑pilot for GitHub pull requests.
 ### Local (Docker Compose)
 1. Copy env example and fill in values:
 	- `cp backend/.env.example backend/.env`
-2. Ensure your GitHub App private key PEM exists; compose expects:
-	- `backend/test/macrozero-app.2025-09-07.private-key.pem`
-	- Or update `docker-compose.yml` secret path accordingly
+2. Ensure your GitHub App private key PEM exists. By default `docker-compose.yml`
+	 mounts `./backend/certs/macrozero-app.2025-09-07.private-key.pem`; adjust the
+	 secret path if you store the key elsewhere.
 3. Run:
 	- `docker compose up --build`
 4. Open:
@@ -27,10 +27,10 @@ AI code review co‑pilot for GitHub pull requests.
 	- Health: http://localhost:8000/healthz
 
 ### Local (direct)
-From `backend/` (requires Python 3.13 & uv):
-- `uv export --frozen --no-dev -o requirements.txt`
-- `uv pip install --system -r requirements.txt`
-- `uvicorn server:app --host 0.0.0.0 --port 8000`
+Requires Python 3.13+ and [uv](https://docs.astral.sh/uv/):
+- `cd backend`
+- `uv sync`
+- `uv run uvicorn server:app --host 0.0.0.0 --port 8000`
 
 ## Backend
 - Framework: FastAPI + SQLModel (TiDB/MySQL)
@@ -48,6 +48,8 @@ Required:
 - `KIMI_API_KEY`
 Optional:
 - `KIMI_API_BASE_URL`, `INIT_DB_ON_STARTUP` (default true)
+- `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET` (optional OAuth login)
+- `JWT_SECRET_KEY` (required if auth cookies are in use)
 
 ### Webhooks
 Set your GitHub App webhook URL to:
