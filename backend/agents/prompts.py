@@ -52,6 +52,10 @@ Follow this generation guidance:
 1) Body synthesis:
 - Write a concise overall review body (2–4 sentences) that summarizes key issues and suggestions.
 - Tone should be professional, constructive, and concise (like a GitHub code review).
+- When adding code suggestions, format in this form:
+  ```suggestion
+  <code here>
+  ```
 
 2) Comments (line + side ONLY — do NOT use position):
 - Each inline comment MUST include: path, line, side ("RIGHT" for head/new code; use "LEFT" only if the diff shows a deletion and you can determine the base/old line).
