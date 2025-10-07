@@ -20,6 +20,7 @@ dotenv.load_dotenv()
 
 KIMI_API_KEY = os.getenv("KIMI_API_KEY")
 KIMI_API_BASE_URL = os.getenv("KIMI_API_BASE_URL")
+print(KIMI_API_KEY)
 
 model = "gemini-2.5-pro"
 
