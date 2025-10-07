@@ -61,6 +61,10 @@ Follow this generation guidance:
 - Deduplicate by (path, line, side). Do not emit duplicates.
 - If suggesting a multi-line range, include start_line and start_side; otherwise omit them.
 - If you cannot confidently map an issue to a valid (path, line, side) from the diff, omit the inline comment for that issue and rely on the overall body instead (to avoid API errors).
+- For code suggestions use the exact fenced-block format GitHub requires:
+  ```suggestion
+  <replacement code lines>
+  ```
 
 3) Event selection:
 - REQUEST_CHANGES if any correctness, security, data loss, a major performance issue exists, or the code will fail to run and raise exceptions.
