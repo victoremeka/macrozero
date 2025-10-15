@@ -99,8 +99,6 @@ async def call_agent_async(payload: dict, user_id: str, session_id: str):
             else:
                 # Fallback to stringified event
                 final_response_text = str(getattr(event, "message", "")) or str(event)
-    print("FINAL RESPONSE IN CALL_AGENT_ASYNC -->", final_response_text)
-
     try:
         text = str(final_response_text or "").strip()
         json_start = text.find("{")

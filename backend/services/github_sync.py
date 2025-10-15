@@ -23,6 +23,8 @@ import os, dotenv
 
 dotenv.load_dotenv()
 
+APP_TAG = r"@macrozeroai"
+
 client = genai.Client(
     api_key=os.getenv("GEMINI_API_KEY"),
 )
@@ -325,3 +327,10 @@ def handle_issue(payload: dict, session: Session, repo: Repository) -> None:
             print("Database error:", e)
     else:
         print(f"Ignored issue action: {action}")
+
+def handle_issue_comment(payload: dict, session: Session, repo: Repository) -> None:
+    comment = payload["comment"]
+    body = comment.get("body", "")
+
+    if re.search(APP_TAG, body): # mentioned
+        print("mention acknowledged!")
