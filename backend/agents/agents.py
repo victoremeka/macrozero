@@ -20,13 +20,6 @@ sanitizer_agent = Agent(
     tools=[create_pr_review]
 )
 
-memory_agent = Agent(
-    name="_step_memory_agent",
-    model=model,
-    description="Maintains embeddings DB and migrations.",
-    tools=[]
-)
-
 research_agent = Agent(
     name="_step_research_agent",
     model=model,

@@ -281,56 +281,15 @@ def handle_pull_request_review_comment(payload: dict, session: Session, repo: Re
     """
     return
 
-def handle_issue(payload: dict, session: Session, repo: Repository) -> None:
-    """Handle GitHub issues webhooks and synchronize a minimal issue index.
-
-    Processes actions: opened, edited, closed, deleted. Upserts or deletes issue rows
-    with a lightweight embedding of the title/body for later search/triage.
-
-    Args:
-        payload: Full webhook JSON payload for issues.
-        session: Active SQLModel session for persistence.
-        repo: Database Repository row corresponding to payload["repository"].
-
-    Returns:
-        None. The caller is responsible for committing the transaction.
-    """
-    action = payload.get("action")
-    issue = payload["issue"]
-    issue_number = issue["number"]
-
-    gh_state = issue.get("state", "").lower()
-    issue_state = IssueState.CLOSED if gh_state == "closed" or action == "closed" else IssueState.OPEN
-
-    title = issue.get("title", "")
-    body = issue.get("body", "")
-    content = f"title: {title}\nbody: {body}"
-
-    if action in {"opened", "edited", "closed"}:
-        try:
-            upsert_issue(
-                session=session,
-                repo=repo,
-                number=issue_number,
-                state=issue_state,
-                content_embedding=embed(content),  # type: ignore
-            )
-        except SQLAlchemyError as e:
-            print("Database error:", e)
-    elif action == "deleted":
-        try:
-            issue_db = session.exec(select(Issue).where(Issue.repo_id == repo.id, Issue.number == issue_number)).one_or_none()
-            if issue_db:
-                session.delete(issue_db)
-                session.flush()
-        except SQLAlchemyError as e:
-            print("Database error:", e)
-    else:
-        print(f"Ignored issue action: {action}")
-
-def handle_issue_comment(payload: dict, session: Session, repo: Repository) -> None:
+async def handle_issue_comment(payload: dict, session: Session, repo: Repository) -> None: # When the bots is mentioned in a pr/issue comment
     comment = payload["comment"]
     body = comment.get("body", "")
 
     if re.search(APP_TAG, body): # mentioned
-        print("mention acknowledged!")
+        pass
+        # call_agent_async(
+        #     payload={
+        #         "type": "pull_request",
+                
+        #     }
+        # )

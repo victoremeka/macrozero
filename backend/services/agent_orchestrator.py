@@ -12,7 +12,6 @@ logging.basicConfig(
 )
 
 from agents.agents import (
-    memory_agent,
     issue_triage_resolution_agent,
     code_review_agent,
 )
@@ -27,7 +26,6 @@ orchestrator_agent = LlmAgent(
 
     Routing:
     - pull_request* -> code_review_agent (this agent internally runs two steps: reviewer then packager)
-    - issues* -> issue_triage_agent
     - otherwise -> research_agent
     
     Behavior:
@@ -39,7 +37,6 @@ orchestrator_agent = LlmAgent(
     Pass the final result to `handoff_data`
     """,
     sub_agents=[
-        memory_agent,
         issue_triage_resolution_agent,
         code_review_agent,
     ],

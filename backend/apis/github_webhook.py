@@ -75,7 +75,7 @@ async def handle_webhook_payload(request: Request, session: Session):
         elif event == "issues":
             handle_issue(payload=payload, session=session, repo=repo)
         elif event == "issue_comment":
-            handle_issue_comment(payload=payload, session=session, repo=repo)
+            await handle_issue_comment(payload=payload, session=session, repo=repo)
         session.commit()
 
     if inst_id:
