@@ -4,7 +4,7 @@ from db import upsert_repo
 
 from fastapi import HTTPException, Request
 from integrations.github_client import (WEBHOOK_SECRET, use_installation)
-from services.github_sync import handle_issue, handle_pull_request, handle_pull_request_review
+from services.github_sync import handle_issue_comment, handle_pull_request, handle_pull_request_review
 
 
 APP_NAME = "macrozero"
@@ -67,13 +67,8 @@ async def handle_webhook_payload(request: Request, session: Session):
 
         if event == "pull_request":
             res = await handle_pull_request(payload=payload, session=session, repo=repo)
-        elif event == "pull_request_review":
-            handle_pull_request_review(payload=payload, session=session, repo=repo)
-        elif event == "pull_request_review_comment":
-            print("Ignored: pull_request_review_comment")
-            return
-        elif event == "issues":
-            handle_issue(payload=payload, session=session, repo=repo)
+        elif event == "issue_comment":
+            await handle_issue_comment(payload=payload, session=session, repo=repo)
         session.commit()
 
     if inst_id:

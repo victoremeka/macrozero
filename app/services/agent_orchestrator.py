@@ -12,7 +12,6 @@ logging.basicConfig(
 )
 
 from agents.agents import (
-    memory_agent,
     issue_triage_resolution_agent,
     code_review_agent,
 )
@@ -27,7 +26,6 @@ orchestrator_agent = LlmAgent(
 
     Routing:
     - pull_request* -> code_review_agent (this agent internally runs two steps: reviewer then packager)
-    - issues* -> issue_triage_agent
     - otherwise -> research_agent
     
     Behavior:
@@ -39,7 +37,6 @@ orchestrator_agent = LlmAgent(
     Pass the final result to `handoff_data`
     """,
     sub_agents=[
-        memory_agent,
         issue_triage_resolution_agent,
         code_review_agent,
     ],
@@ -99,8 +96,6 @@ async def call_agent_async(payload: dict, user_id: str, session_id: str):
             else:
                 # Fallback to stringified event
                 final_response_text = str(getattr(event, "message", "")) or str(event)
-    print("FINAL RESPONSE IN CALL_AGENT_ASYNC -->", final_response_text)
-
     try:
         text = str(final_response_text or "").strip()
         json_start = text.find("{")
