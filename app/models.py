@@ -40,7 +40,7 @@ class PullRequest(SQLModel, table=True):
     state : PRState = Field(sa_column=Column(Enum(PRState, name="pr_state")), default=PRState.OPEN)
     head_branch: str    # source
     base_branch: str    # target
- 
+
     text: str
     embedding: list[float] = Field(
         sa_column=Column(VectorType(EMBED_DIM), nullable=False),
@@ -69,7 +69,7 @@ class Commit(SQLModel, table=True):
 
     repo : Repository = Relationship(back_populates="commits")
     prs : list[PullRequest] = Relationship(back_populates="commits", link_model=CommitPullRequestLink)
-    
+
     __tablename__ = "git_commit" # type: ignore
     __table_args__ = (
         UniqueConstraint("repo_id", "sha", name="uq_commit_repo_sha"),
@@ -81,7 +81,7 @@ class Review(SQLModel, table=True):
     comment_id : int | None = Field(sa_column=Column(BigInteger, index=True))
     pr_id : int = Field(foreign_key="pullrequest.id", index=True)
     comment_text : str | None
-    
+
     review_type: str | None = Field(default=None, index=True) # "APPROVED", "CHANGES_REQUESTED", "COMMENTED", "INLINE"
     file_path: str | None
     line_number: int | None

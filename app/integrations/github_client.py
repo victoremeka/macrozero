@@ -1,8 +1,12 @@
-import os, time, requests, jwt
+import os
+import time
+import requests
+import jwt
 from typing import Any, Dict, Iterable, Optional
 import dotenv
 from contextvars import ContextVar
 from contextlib import contextmanager
+
 
 dotenv.load_dotenv()
 
@@ -10,7 +14,7 @@ dotenv.load_dotenv()
 APP_ID = os.getenv("GITHUB_APP_ID")
 INSTALLATION_ID = os.getenv("GITHUB_INSTALLATION_ID")
 WEBHOOK_SECRET = os.getenv("GITHUB_WEBHOOK_SECRET")
-PRIVATE_KEY_PATH = os.getenv("GITHUB_PRIVATE_KEY_PATH")
+GITHUB_PRIVATE_KEY= os.getenv("GITHUB_PRIVATE_KEY")
 
 API_BASE = "https://api.github.com"
 # cache tokens per installation id instead of a single global token
@@ -20,7 +24,7 @@ __all__ = [
     "APP_ID",
     "INSTALLATION_ID",
     "WEBHOOK_SECRET",
-    "PRIVATE_KEY_PATH",
+    "GITHUB_PRIVATE_KEY",
     "use_installation",
     "gh_request",
     "gh_json",
@@ -52,41 +56,9 @@ def _current_installation_id() -> str:
     return str(inst)
 
 def _private_key() -> str:
-    """
-    Load the GitHub App's private key from the configured file path.
-
-    This function handles both absolute and relative paths:
-    - Absolute paths are used as-is
-    - Relative paths are resolved relative to the repository root
-    - Falls back to checking relative to the backend/ directory
-
-    Returns:
-        str: The complete private key content as a string, including headers/footers.
-
-    Raises:
-        RuntimeError: If GITHUB_PRIVATE_KEY_PATH environment variable is not set,
-                     or if the private key file cannot be found at the specified path.
-
-    Security:
-        The private key is read from disk on each call - no caching for security.
-        Ensure the private key file has appropriate filesystem permissions (600).
-    """
-    if not PRIVATE_KEY_PATH:
-        raise RuntimeError("GITHUB_PRIVATE_KEY_PATH not set")
-    path = PRIVATE_KEY_PATH
-    if not os.path.isabs(path):
-        # resolve relative to repo root
-        path = os.path.abspath(path)
-        if not os.path.exists(path):
-            # fallback relative to backend/
-            here = os.path.dirname(__file__)
-            cand = os.path.join(here, "..", path)
-            if os.path.exists(cand):
-                path = cand
-    if not os.path.exists(path):
-        raise RuntimeError(f"Private key not found: {path}")
-    with open(path, "r") as f:
-        return f.read()
+    if not GITHUB_PRIVATE_KEY:
+        raise RuntimeError("GITHUB_PRIVATE_KEY not set")
+    return GITHUB_PRIVATE_KEY
 
 def _issue_jwt() -> str:
     """
@@ -213,7 +185,7 @@ def gh_json(method: str, path: str, **kw):
               (params, json, headers, timeout)
 
     Returns:
-        Union[dict, list, str, None]: 
+        Union[dict, list, str, None]:
         - dict/list for JSON responses
         - None for 204 No Content responses
         - str for non-JSON responses
@@ -258,7 +230,7 @@ def paginate(path: str, params: Optional[Dict[str, Any]] = None, per_page: int =
     Usage:
         for issue in paginate("/repos/owner/repo/issues"):
             print(issue["title"])
-        
+
         # Convert to list if needed
         all_issues = list(paginate("/repos/owner/repo/issues"))
     """

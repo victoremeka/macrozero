@@ -1,5 +1,5 @@
 from fastapi import FastAPI, Request
-from .app.github_webhook import handle_webhook_payload
+from app.github_webhook import handle_webhook_payload
 
 app = FastAPI()
 
