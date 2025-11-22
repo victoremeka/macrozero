@@ -1,7 +1,7 @@
 from google.adk.agents import Agent, SequentialAgent
 
-from .prompts import review_prompt, pr_review_packaging_prompt       
-from .tools import create_pr_review, model     
+from agents.prompts import review_prompt, pr_review_packaging_prompt       
+from agents.tools import create_pr_review, model
 
 
 reviewer_agent = Agent(
