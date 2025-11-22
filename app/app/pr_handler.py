@@ -50,49 +50,28 @@ def submit_review(data: str, owner, repo, pull_number):
     print(review.headers)
     print(review.status_code, review.text)
 
-def get_commit_diffs(commits_url, repo_owner, repo_name):
-    pr_commits = requests.get(
-        commits_url,
-        headers={
-            "Authorization": f"Bearer {_installation_token()}",
-        }
-    ).json()
-    responses = []
-    for commit in pr_commits:
-        commit_sha = commit["sha"]
-
-        response = requests.get(
-            f"https://api.github.com/repos/{repo_owner}/{repo_name}/commits/{commit_sha}",
-            headers={
-                "Authorization": f"Bearer {_installation_token()}",
-                "Accept": "application/vnd.github.diff"
-            },
-        ).text
-
-        responses.append(response)
-
-    return responses
-
 
 def format_diff(diff: str):
-    diff_split = diff.splitlines()
-    at_positions = []
-    commits = []
-    for i, line in enumerate(diff_split):
-        if re.search(r"^(@@).+(@@)$", line):
-            at_positions.append(i-1)
+    lines = diff.split('\n')
+    result = []
+    line_counter = 0
+    in_diff = False
 
-    for i, pos in enumerate(at_positions):
-        if i == len(at_positions)-1:
-            commits.append(
-                diff_split[pos+1: ]
-            )
-            break
-        commits.append(
-            diff_split[pos+1: at_positions[i+1]+1]
-        )
-    # dump_to_json(json.loads(commits), "formatted-diff", is_json=False)
-    return commits
+    for line in lines:
+        if line.startswith('@@'):
+            line_counter = 0
+            in_diff = True
+            result.append(line)
+        elif in_diff and line:
+            line_counter += 1
+            result.append(f"{line_counter}| {line}")
+        else:
+            result.append(line)
+            if not line:  # Empty line ends diff section
+                in_diff = False
+
+    return '\n'.join(result)
+
 
 def resolve_pending_review(repo_owner, repo_name, pr_number, status):
     check_pending = requests.get(
@@ -122,24 +101,32 @@ async def handle_pull_request(payload: dict[str, Any]):
 
     if pr:
         action = payload["action"]
-        body = pr["title"] + "\n\n" + pr["body"]
+        body = pr["title"] + "\n\n" + pr["body"] if pr["body"] is not None else pr["title"]
         pr_number = pr["number"]
         repo_owner = pr["base"]["user"]["login"]
         repo_name = payload["repository"]["name"]
         pr_url = pr["url"]
         commits_url = pr["commits_url"]
 
-        diff = get_commit_diffs(commits_url=commits_url, repo_owner=repo_owner, repo_name=repo_name)
-        dump_to_json(diff, "diff",) # Housekeeping
-        # diff = format_diff(body + "\n\n" + diff)
+        diff = requests.get(
+            pr_url,
+            headers={
+                "Authorization": f"Bearer {_installation_token()}",
+                "Accept": "application/vnd.github.diff"
+            },
+        ).text
+
+        diff = format_diff(diff)
+
+        dump_to_json(diff, "diff", is_json=False) # Housekeeping
 
         if action in ("reopened", "opened", "synchronize"):
             resolve_pending_review(repo_name=repo_name, repo_owner=repo_owner, pr_number=pr_number, status="COMMENT")
-
-            # submit_review(
-            #     "Hello from macrozeroai! 🥳",
-            #     owner=repo_owner,
-            #     repo=repo_name,
-            #     pull_number=pr_number
-            # )
-            # await call_agent(diff)
+            review = await call_agent(diff)
+            
+            submit_review(
+                review,
+                owner=repo_owner,
+                repo=repo_name,
+                pull_number=pr_number
+            )
