@@ -29,8 +29,6 @@ async def call_agent(query):
     events = runner.run(user_id=USER_ID, session_id=SESSION_ID, new_message=content)
 
     for event in events:
-        print(f"\nDEBUG EVENT: {event}\n")
         if event.is_final_response() and event.content:
             final_answer = event.content.parts[0].text.strip()
-            print("\n🟢 FINAL ANSWER\n", final_answer, "\n")
             return final_answer
