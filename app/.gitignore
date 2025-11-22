@@ -219,3 +219,7 @@ __marimo__/
 
 # Testing
 test/
+
+
+# Payloads
+payloads/
