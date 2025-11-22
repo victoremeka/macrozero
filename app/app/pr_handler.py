@@ -42,14 +42,11 @@ def submit_review(data: str, owner, repo, pull_number):
         "Accept": "application/vnd.github+json",
         "Authorization" :f"Bearer {_installation_token()}",
         },
-        data={
+        json={
             "body": data,
             "event":"COMMENT", # REQUEST_CHANGES, APPROVE, COMMENT (must always be one of these)
         }
     )
-    print(review.headers)
-    print(review.status_code, review.text)
-
 
 def format_diff(diff: str):
     lines = diff.split('\n')
