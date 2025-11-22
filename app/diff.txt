@@ -1,0 +1,158 @@
+diff --git a/README.md b/README.md
+index d77d258..0d67b02 100644
+--- a/README.md
++++ b/README.md
+@@ -1 +1,28 @@
+-# macrozero-test-repo
+\ No newline at end of file
++# macrozero-test-repo
++
++## Quiz Application
++
++A simple command-line quiz game written in Python.
++
++### Features
++- Multiple difficulty levels (Easy, Medium, Hard)
++- Random question selection
++- Score tracking
++- Grade calculation
++- Play again option
++
++### How to Run
++
++```bash
++python quiz.py
++```
++
++### Requirements
++- Python 3.x
++
++### How to Play
++1. Run the application
++2. Enter your name
++3. Select difficulty level (1, 2, or 3)
++4. Answer the questions by entering a number (1-4)
++5. View your final score and grade
+\ No newline at end of file
+diff --git a/quiz.py b/quiz.py
+new file mode 100644
+index 0000000..b8bce54
+--- /dev/null
++++ b/quiz.py
+@@ -0,0 +1,116 @@
++import random
++import time
++
++q = [
++    {"q": "What is the capital of France?", "a": ["London", "Berlin", "Paris", "Madrid"], "c": 2},
++    {"q": "Which planet is known as the Red Planet?", "a": ["Venus", "Mars", "Jupiter", "Saturn"], "c": 1},
++    {"q": "What is 2 + 2?", "a": ["3", "4", "5", "6"], "c": 1},
++    {"q": "Who wrote Romeo and Juliet?", "a": ["Charles Dickens", "William Shakespeare", "Mark Twain", "Jane Austen"], "c": 1},
++    {"q": "What is the largest ocean on Earth?", "a": ["Atlantic", "Indian", "Arctic", "Pacific"], "c": 3},
++    {"q": "How many continents are there?", "a": ["5", "6", "7", "8"], "c": 2},
++    {"q": "What is the boiling point of water?", "a": ["90°C", "100°C", "110°C", "120°C"], "c": 1},
++    {"q": "Which programming language is this quiz written in?", "a": ["Java", "Python", "C++", "JavaScript"], "c": 1},
++]
++
++s = 0
++t = 0
++
++def start():
++    global s, t
++    print("=" * 50)
++    print("WELCOME TO THE QUIZ GAME!")
++    print("=" * 50)
++    n = input("Enter your name: ")
++    print(f"Hello {n}! Let's start the quiz.")
++    time.sleep(1)
++    
++    d = input("Select difficulty (1=Easy, 2=Medium, 3=Hard): ")
++    
++    if d == "1":
++        num = 3
++    elif d == "2":
++        num = 5
++    elif d == "3":
++        num = 8
++    else:
++        num = 5
++    
++    questions = random.sample(q, num)
++    
++    for i in range(len(questions)):
++        print("\n" + "-" * 50)
++        print(f"Question {i+1}/{num}")
++        print("-" * 50)
++        print(questions[i]["q"])
++        for j in range(len(questions[i]["a"])):
++            print(f"{j+1}. {questions[i]['a'][j]}")
++        
++        ans = input("\nYour answer (1-4): ")
++        
++        if ans == "1":
++            x = 0
++        elif ans == "2":
++            x = 1
++        elif ans == "3":
++            x = 2
++        elif ans == "4":
++            x = 3
++        else:
++            x = -1
++        
++        if x == questions[i]["c"]:
++            print("✓ Correct!")
++            s = s + 1
++            if d == "3":
++                t = t + 10
++            elif d == "2":
++                t = t + 5
++            else:
++                t = t + 3
++        else:
++            print("✗ Wrong!")
++            if questions[i]["c"] == 0:
++                print(f"The correct answer was: {questions[i]['a'][0]}")
++            elif questions[i]["c"] == 1:
++                print(f"The correct answer was: {questions[i]['a'][1]}")
++            elif questions[i]["c"] == 2:
++                print(f"The correct answer was: {questions[i]['a'][2]}")
++            elif questions[i]["c"] == 3:
++                print(f"The correct answer was: {questions[i]['a'][3]}")
++        
++        time.sleep(0.5)
++    
++    print("\n" + "=" * 50)
++    print("QUIZ COMPLETED!")
++    print("=" * 50)
++    print(f"Player: {n}")
++    print(f"Score: {s}/{num}")
++    print(f"Total Points: {t}")
++    
++    p = (s / num) * 100
++    
++    if p >= 90:
++        print("Grade: A+ (Excellent!)")
++    elif p >= 80:
++        print("Grade: A (Great job!)")
++    elif p >= 70:
++        print("Grade: B (Good!)")
++    elif p >= 60:
++        print("Grade: C (Not bad!)")
++    elif p >= 50:
++        print("Grade: D (You can do better!)")
++    else:
++        print("Grade: F (Study more!)")
++    
++    print("=" * 50)
++    
++    again = input("\nPlay again? (y/n): ")
++    if again == "y" or again == "Y":
++        s = 0
++        t = 0
++        start()
++    else:
++        print("Thanks for playing!")
++
++if __name__ == "__main__":
++    start()
