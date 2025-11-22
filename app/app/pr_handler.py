@@ -123,6 +123,8 @@ async def handle_pull_request(payload: dict[str, Any]):
         if action in ("reopened", "opened", "synchronize"):
             resolve_pending_review(repo_name=repo_name, repo_owner=repo_owner, pr_number=pr_number, status="COMMENT")
             review = await call_agent(diff)
+
+            print(f"review -> {review}")
             
             if review:
                 submit_review(
