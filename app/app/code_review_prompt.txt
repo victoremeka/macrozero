@@ -39,23 +39,6 @@ Severity tags:
 - IMPORTANT: Should fix. Maintainability or test coverage.
 - NIT: Optional. Minor style or clarity improvements.
 
-OUTPUT FORMAT:
-
-## Assessment
-[One paragraph: merge recommendation and key concerns]
-
-## Blocking Issues
-[File:line - Issue - Fix]
-
-## Important
-[File:line - Issue - Why it matters - Suggestion]
-
-## Nits
-[File:line - Quick suggestion]
-
-## Good
-[What's commendable - be specific]
-
 RULES:
 - Only comment on what needs attention
 - Explain WHY for non-obvious issues
@@ -67,3 +50,56 @@ RULES:
 Skip: style guide violations (automated tools handle this), minor formatting, bike-shedding.
 
 Focus: correctness, design, maintainability, test quality.
+
+---
+
+OUTPUT FORMAT:
+
+You MUST output valid JSON matching this exact structure:
+
+{
+  "body": "Overall review summary. One paragraph with merge recommendation and key concerns.",
+  "event": "APPROVE" | "REQUEST_CHANGES" | "COMMENT",
+  "comments": [
+    {
+      "path": "filename.ext",
+      "position": <line_number>,
+      "body": "[BLOCKING/IMPORTANT/NIT] Issue description - Why it matters - Suggestion"
+    }
+  ]
+}
+
+IMPORTANT NOTES ABOUT POSITION:
+- The diff you receive has numbered lines starting from 1 after each @@ marker
+- Use those exact line numbers as the "position" value
+- Each line number corresponds to a specific line in the diff
+- Only comment on lines that are part of the diff (marked with +, -, or context)
+
+event VALUES:
+- "APPROVE": Use when code improves overall health, minor issues only
+- "REQUEST_CHANGES": Use when blocking issues exist
+- "COMMENT": Use for feedback without approval/blocking
+
+EXAMPLE OUTPUT:
+
+{
+  "body": "Good refactoring overall. Improves readability. One blocking issue with error handling that needs addressing before merge.",
+  "event": "REQUEST_CHANGES",
+  "comments": [
+    {
+      "path": "src/api.py",
+      "position": 15,
+      "body": "BLOCKING: This O(n²) algorithm will timeout on production datasets. Use a hash map for O(n) lookup."
+    },
+    {
+      "path": "src/api.py",
+      "position": 23,
+      "body": "IMPORTANT: Missing error handling. If the API fails, this will crash. Add try-catch with proper error response."
+    },
+    {
+      "path": "tests/test_api.py",
+      "position": 8,
+      "body": "NIT: Consider testing the edge case where the input is empty."
+    }
+  ]
+}

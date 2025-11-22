@@ -42,10 +42,11 @@ def submit_review(data: str, owner, repo, pull_number):
         "Accept": "application/vnd.github+json",
         "Authorization" :f"Bearer {_installation_token()}",
         },
-        json={
-            "body": data,
-            "event":"COMMENT", # REQUEST_CHANGES, APPROVE, COMMENT (must always be one of these)
-        }
+        # json={
+        #     "body": data,
+        #     "event":"COMMENT", # REQUEST_CHANGES, APPROVE, COMMENT (must always be one of these)
+        # }
+        json = data
     )
 
 def format_diff(diff: str):
@@ -121,11 +122,9 @@ async def handle_pull_request(payload: dict[str, Any]):
             resolve_pending_review(repo_name=repo_name, repo_owner=repo_owner, pr_number=pr_number, status="COMMENT")
             review = await call_agent(diff)
 
-            print(f"review -> {review}")
-            
             if review:
                 submit_review(
-                    review,
+                    data=json.loads(review),
                     owner=repo_owner,
                     repo=repo_name,
                     pull_number=pr_number
