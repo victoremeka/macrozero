@@ -95,7 +95,7 @@ def resolve_pending_review(repo_owner, repo_name, pr_number, status):
 async def handle_pull_request(payload: dict[str, Any]):
     # find @ tag -> ^(@@).+(@@)$
     # diff start -> ^(diff)
-    dump_to_json(payload, "pr")
+    # dump_to_json(payload, "pr")
 
     pr = payload.get("pull_request")
 
@@ -118,12 +118,12 @@ async def handle_pull_request(payload: dict[str, Any]):
 
         diff = format_diff(diff)
 
-        dump_to_json(diff, "diff", is_json=False) # Housekeeping
+        # dump_to_json(diff, "diff", is_json=False) # Housekeeping
 
         if action in ("reopened", "opened", "synchronize"):
             resolve_pending_review(repo_name=repo_name, repo_owner=repo_owner, pr_number=pr_number, status="COMMENT")
             review = await call_agent(diff)
-            
+
             submit_review(
                 review,
                 owner=repo_owner,
