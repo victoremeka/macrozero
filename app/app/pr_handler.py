@@ -35,7 +35,7 @@ def embed(str:str):
     if embeddings:
         return embeddings[0].values
 
-def submit_review(data: str, owner, repo, pull_number):
+def submit_review(data : dict, owner, repo, pull_number):
     review = requests.post(
         url=f"https://api.github.com/repos/{owner}/{repo}/pulls/{pull_number}/reviews",
         headers={

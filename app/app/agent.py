@@ -1,17 +1,30 @@
+from typing import Literal
 from google.adk.agents import LlmAgent
 from google.adk.models.lite_llm import LiteLlm
 from google.adk.runners import Runner
 from google.adk.sessions import InMemorySessionService, DatabaseSessionService
 from google.genai import types
+from pydantic import BaseModel, Field
 
 with open("app/code_review_prompt.txt", "r", encoding="utf-8") as f:
     base_prompt = f.read()
+
+class ReviewComment(BaseModel):
+    path: str = Field(description="The file path")
+    position: int = Field(description="The line number in the diff")
+    body: str = Field(description="The review comment")
+
+class CodeReview(BaseModel):
+    body: str = Field(description="Overall review summary with merge recommendation")
+    event: Literal["APPROVE", "REQUEST_CHANGES", "COMMENT"] = Field(description="The review action")
+    comments: list[ReviewComment] = Field(description="List of review comments")
 
 
 agent = LlmAgent(
     model=LiteLlm(model="gemini/gemini-2.5-flash"), # LiteLLM model string format
     name="code_review_agent",
     instruction=base_prompt,
+    output_schema=CodeReview,
 )
 
 APP_NAME = "macrozeroai"
