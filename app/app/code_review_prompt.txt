@@ -34,11 +34,6 @@ Be direct. Skip pleasantries. State the issue, why it matters, what to do.
 Bad: "I think maybe we could possibly consider using a different approach here?"
 Good: "This O(n²) algorithm will timeout on production datasets. Use a hash map for O(n)."
 
-Severity tags:
-- BLOCKING: Merge blocker. Security, correctness, or design issues.
-- IMPORTANT: Should fix. Maintainability or test coverage.
-- NIT: Optional. Minor style or clarity improvements.
-
 RULES:
 - Only comment on what needs attention
 - Explain WHY for non-obvious issues
@@ -64,7 +59,7 @@ You MUST output valid JSON matching this exact structure:
     {
       "path": "filename.ext",
       "position": <line_number>,
-      "body": "[BLOCKING/IMPORTANT/NIT] Issue description - Why it matters - Suggestion"
+      "body": "Issue description - Why it matters - Suggestion"
     }
   ]
 }
