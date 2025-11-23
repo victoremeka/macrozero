@@ -61,8 +61,11 @@ def format_diff(diff: str):
             in_diff = True
             result.append(line)
         elif in_diff and line:
-            line_counter += 1
-            result.append(f"{line_counter}| {line}")
+            if line.startswith(("+", "-", "\\")) and not line.startswith(("---","+++")):
+                line_counter += 1
+                result.append(f"{line_counter}| {line}")
+                continue
+            result.append(line)
         else:
             result.append(line)
             if not line:  # Empty line ends diff section
