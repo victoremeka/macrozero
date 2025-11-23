@@ -59,7 +59,7 @@ You MUST output valid JSON matching this exact structure:
     {
       "path": "filename.ext",
       "position": <line_number>,
-      "body": "[BLOCKING/IMPORTANT/NIT] Issue description - Why it matters - Suggestion"
+      "body": "Issue description - Why it matters - Suggestion"
     }
   ]
 }
