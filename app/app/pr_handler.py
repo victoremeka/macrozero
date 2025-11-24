@@ -42,10 +42,6 @@ def submit_review(data : dict, owner, repo, pull_number):
         "Accept": "application/vnd.github+json",
         "Authorization" :f"Bearer {_installation_token()}",
         },
-        # json={
-        #     "body": data,
-        #     "event":"COMMENT", # REQUEST_CHANGES, APPROVE, COMMENT (must always be one of these)
-        # }
         json = data
     )
 
@@ -61,8 +57,11 @@ def format_diff(diff: str):
             in_diff = True
             result.append(line)
         elif in_diff and line:
-            line_counter += 1
-            result.append(f"{line_counter}| {line}")
+            if line.startswith(("+", "-", "\\")) and not line.startswith(("---","+++")):
+                line_counter += 1
+                result.append(f"{line_counter}| {line}")
+                continue
+            result.append(line)
         else:
             result.append(line)
             if not line:  # Empty line ends diff section
@@ -91,9 +90,6 @@ def resolve_pending_review(repo_owner, repo_name, pr_number, status):
             ).json()
 
 async def handle_pull_request(payload: dict[str, Any]):
-    # find @ tag -> ^(@@).+(@@)$
-    # diff start -> ^(diff)
-    # dump_to_json(payload, "pr")
 
     pr = payload.get("pull_request")
 
@@ -116,10 +112,7 @@ async def handle_pull_request(payload: dict[str, Any]):
 
         diff = format_diff(diff)
 
-        # dump_to_json(diff, "diff", is_json=False) # Housekeeping
-
         if action in ("reopened", "opened", "synchronize"):
-            resolve_pending_review(repo_name=repo_name, repo_owner=repo_owner, pr_number=pr_number, status="COMMENT")
             review = await call_agent(diff)
 
             if review:
