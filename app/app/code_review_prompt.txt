@@ -50,6 +50,21 @@ Focus: correctness, design, maintainability, test quality.
 
 OUTPUT FORMAT:
 
+## Assessment
+[One paragraph: merge recommendation and key concerns]
+
+## Blocking Issues
+[File:line - Issue - Fix]
+
+## Important
+[File:line - Issue - Why it matters - Suggestion]
+
+## Nits
+[File:line - Quick suggestion]
+
+## Good
+[What's commendable - be specific]
+
 You MUST output valid JSON matching this exact structure:
 
 {
