@@ -1,6 +1,8 @@
 # macrozero code review service
 This is where the not so magic-magic happens.
 
+An AI code review tool. Model agnostic. Codebase aware.
+
 ## Setup
 
 Prerequisites: Python 3.13+, [uv](https://docs.astral.sh/uv/).
