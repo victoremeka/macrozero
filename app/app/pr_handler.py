@@ -56,19 +56,24 @@ def format_diff(diff: str):
     result = []
     line_counter = 0
     in_diff = False
+    diff_start_index = 0
 
-    for line in lines:
-        if line.startswith('@@'):
+    for i, line in enumerate(lines):
+        
+        if line.startswith('diff --git'):
+            diff_start_index = 0
+            result.append(line)
+        elif diff_start_index > 0 and line.startswith("@@"):
             line_counter = 0
             in_diff = True
             result.append(line)
-        elif in_diff and line:
-            match_index = re.match(r"^index\s+[a-z0-9]+\.\.[a-z0-9]+\s+\d+$", line)
-            if not line.startswith(("---","+++", "diff --git")) and not match_index:
-                line_counter += 1
-                result.append(f"{line_counter}| {line}")
-                continue
-            result.append(line)
+            continue
+
+        diff_start_index += 1
+
+        if in_diff and line:
+            line_counter += 1
+            result.append(f"{line_counter}| {line}")
         else:
             result.append(line)
             if not line:  # Empty line ends diff section
