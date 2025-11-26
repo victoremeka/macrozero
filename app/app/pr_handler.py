@@ -1,5 +1,6 @@
 import json
 import os
+import re
 from typing import Any
 from google import genai
 from google.genai import types
@@ -62,7 +63,8 @@ def format_diff(diff: str):
             in_diff = True
             result.append(line)
         elif in_diff and line:
-            if line.startswith(("+", "-", "\\")) and not line.startswith(("---","+++")):
+            match_index = re.match(r"^index\s+[a-z0-9]+\.\.[a-z0-9]+\s+\d+$", line)
+            if not line.startswith(("---","+++", "diff --git")) and not match_index:
                 line_counter += 1
                 result.append(f"{line_counter}| {line}")
                 continue
@@ -118,6 +120,7 @@ async def handle_pull_request(payload: dict[str, Any]):
             print(f"Diff is empty -> {diff}")
 
         diff = format_diff(diff)
+        dump_to_json(diff, "diff", is_json=False)
 
         if action in ("reopened", "opened", "synchronize"):
             review = await call_agent(diff)

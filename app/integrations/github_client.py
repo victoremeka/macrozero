@@ -66,5 +66,3 @@ def _installation_token(owner: str, repo: str):
         },
     ).json()
     return token.get("token")
-
-print(_installation_token(owner="victoremeka", repo="macrozero-test-repo"))
