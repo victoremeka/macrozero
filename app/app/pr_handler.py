@@ -5,7 +5,7 @@ from google import genai
 from google.genai import types
 import requests
 from integrations.github_client import _installation_token
-import re
+
 
 
 from .agent import call_agent
@@ -40,10 +40,15 @@ def submit_review(data : dict, owner, repo, pull_number):
         url=f"https://api.github.com/repos/{owner}/{repo}/pulls/{pull_number}/reviews",
         headers={
         "Accept": "application/vnd.github+json",
-        "Authorization" :f"Bearer {_installation_token()}",
+        "Authorization" :f"Bearer {_installation_token(owner, repo)}",
         },
         json = data
     )
+    if not review.ok:
+        print(f"{review.status_code} : review could not be submitted")
+        print(review.content)
+        print(review.headers)
+
 
 def format_diff(diff: str):
     lines = diff.split('\n')
@@ -74,7 +79,7 @@ def resolve_pending_review(repo_owner, repo_name, pr_number, status):
     check_pending = requests.get(
         f"https://api.github.com/repos/{repo_owner}/{repo_name}/pulls/{pr_number}/reviews",
             headers={
-                "Authorization": f"Bearer {_installation_token()}",
+                "Authorization": f"Bearer {_installation_token(owner=repo_owner, repo=repo_name)}",
             },
         ).json()
     for review in check_pending:
@@ -82,7 +87,7 @@ def resolve_pending_review(repo_owner, repo_name, pr_number, status):
             x = requests.post(
                 f"https://api.github.com/repos/{repo_owner}/{repo_name}/pulls/{pr_number}/reviews/{review["id"]}/events",
                 headers={
-                    "Authorization": f"Bearer {_installation_token()}",
+                    "Authorization": f"Bearer {_installation_token(owner=repo_owner, repo=repo_name)}",
                 },
                 json={
                     "event": status,
@@ -100,20 +105,24 @@ async def handle_pull_request(payload: dict[str, Any]):
         repo_owner = pr["base"]["user"]["login"]
         repo_name = payload["repository"]["name"]
         pr_url = pr["url"]
-        commits_url = pr["commits_url"]
 
         diff = requests.get(
             pr_url,
             headers={
-                "Authorization": f"Bearer {_installation_token()}",
+                "Authorization": f"Bearer {_installation_token(owner=repo_owner, repo=repo_name)}",
                 "Accept": "application/vnd.github.diff"
             },
         ).text
+
+        if diff is None:
+            print(f"Diff is empty -> {diff}")
 
         diff = format_diff(diff)
 
         if action in ("reopened", "opened", "synchronize"):
             review = await call_agent(diff)
+
+            print(f"review -> {review}")
 
             if review:
                 submit_review(
@@ -122,3 +131,5 @@ async def handle_pull_request(payload: dict[str, Any]):
                     repo=repo_name,
                     pull_number=pr_number
                 )
+            else:
+                print(f"No review was created -> {review}")
