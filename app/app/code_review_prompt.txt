@@ -58,17 +58,17 @@ You MUST output valid JSON matching this exact structure:
   "comments": [
     {
       "path": "filename.ext",
-      "position": <line_number>,
+      "position": <line_number_in_diff>,
       "body": "Issue description - Why it matters - Suggestion"
     }
   ]
 }
 
-IMPORTANT NOTES ABOUT POSITION:
-- The diff you receive has numbered lines starting from 1 after each @@ marker
-- Use those exact line numbers as the "position" value
-- Each line number corresponds to a specific line in the diff
-- Only comment on lines that are part of the diff (marked with +, -, or context)
+CRITICAL NOTES ABOUT POSITION:
+- Use "position" which is the line number in the DIFF (the formatted diff you see has line numbers like "1| ", "2| ", etc.)
+- The "position" corresponds to these numbered lines in the formatted diff
+- Only comment on lines that are actually present in the diff (lines with numbers)
+- Do NOT include "diff_hunk", "side", or "line" fields
 
 event VALUES:
 - "APPROVE": Use when code improves overall health, minor issues only
