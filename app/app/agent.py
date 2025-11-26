@@ -11,7 +11,7 @@ with open("app/code_review_prompt.txt", "r", encoding="utf-8") as f:
 
 class ReviewComment(BaseModel):
     path: str = Field(description="The file path")
-    position: int = Field(description="The line number in the diff")
+    position: int = Field(description="The line position in the diff (starting from 1 after each @@ hunk header)")
     body: str = Field(description="The review comment")
 
 class CodeReview(BaseModel):
