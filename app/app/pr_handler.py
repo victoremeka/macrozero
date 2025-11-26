@@ -60,7 +60,6 @@ def format_diff(diff: str):
     for i, line in enumerate(lines):
 
         if line.startswith('diff --git'):
-            result.append(line)
             in_diff = False
             continue
         elif line.startswith("@@"):
