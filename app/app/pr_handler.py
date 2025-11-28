@@ -6,7 +6,7 @@ from google import genai
 from google.genai import types
 import requests
 from integrations.github_client import _installation_token
-
+from base64 import b64decode
 
 
 from .agent import call_agent
@@ -102,6 +102,29 @@ def resolve_pending_review(repo_owner, repo_name, pr_number, status):
                 }
             ).json()
 
+def get_pr_files(repo_owner, repo_name, number) -> dict:
+
+    headers={
+        "Authorization": f"Bearer {_installation_token(owner=repo_owner, repo=repo_name)}",
+    }
+
+    files = requests.get(
+        url=f" https://api.github.com/repos/{repo_owner}/{repo_name}/pulls/{number}/files",
+        headers=headers
+    ).json()
+    
+    res = {}
+    for f in files:
+        path = f["filename"]
+        status = f["status"]
+
+        f_content = requests.get(
+            url=f"https://api.github.com/repos/{repo_owner}/{repo_name}/contents/{path}",
+            headers=headers
+        ).json()["content"]
+        res[path] = b64decode(f_content).decode()
+    return res
+
 async def handle_pull_request(payload: dict[str, Any]):
 
     pr = payload.get("pull_request")
@@ -126,12 +149,21 @@ async def handle_pull_request(payload: dict[str, Any]):
             print(f"Diff is empty -> {diff}")
 
         diff = format_diff(diff)
-        dump_to_json(diff, "diff", is_json=False)
+
+        pr_files = get_pr_files(repo_owner=repo_owner, repo_name=repo_name, number=pr_number)
+
+
+        context = f"""
+Here's the diff:
+{diff}
+
+Here are the files affected:
+{pr_files}
+
+"""
 
         if action in ("reopened", "opened", "synchronize"):
-            review = await call_agent(diff)
-
-            print(f"review -> {review}")
+            review = await call_agent(context)
 
             if review:
                 submit_review(
