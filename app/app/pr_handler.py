@@ -61,7 +61,6 @@ def format_diff(diff: str):
 
         if line.startswith('diff --git'):
             in_diff = False
-            continue
         elif line.startswith("@@"):
             line_counter = 0
             in_diff = True
