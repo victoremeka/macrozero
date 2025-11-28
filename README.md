@@ -4,7 +4,7 @@ AI code reviews that actually understand your codebase.
 ## What is this?
 A GitHub App that reviews your pull requests. Not the generic "consider adding tests" kind—actual specific feedback tied to your code.
 
-Model agnostic. Codebase aware. Built with agents.
+Model agnostic. Codebase aware. Built for OSS.
 
 ## How it works
 1. You open a PR
