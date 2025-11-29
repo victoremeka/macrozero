@@ -36,12 +36,12 @@ def embed(str:str):
     if embeddings:
         return embeddings[0].values
 
-def submit_review(data : dict, owner, repo, pull_number):
+def submit_review(data : dict, owner, repo, pull_number, installation_token):
     review = requests.post(
         url=f"https://api.github.com/repos/{owner}/{repo}/pulls/{pull_number}/reviews",
         headers={
         "Accept": "application/vnd.github+json",
-        "Authorization" :f"Bearer {_installation_token(owner, repo)}",
+        "Authorization" :f"Bearer {installation_token}",
         },
         json = data
     )
@@ -50,21 +50,21 @@ def submit_review(data : dict, owner, repo, pull_number):
         print(review.content)
         print(review.headers)
 
-
 def format_diff(diff: str):
     lines = diff.split('\n')
     result = []
     line_counter = 0
     in_diff = False
-
-    for i, line in enumerate(lines):
-
+    hunk_start = False
+    for line in lines:
         if line.startswith('diff --git'):
             in_diff = False
-        elif line.startswith("@@"):
             line_counter = 0
+            hunk_start = False
+        elif line.startswith("@@") and not hunk_start:
             in_diff = True
             result.append(line)
+            hunk_start = True
             continue
 
         if not in_diff:
@@ -72,22 +72,19 @@ def format_diff(diff: str):
             continue
         
 
-        if in_diff and line:
+        if in_diff:
             line_counter += 1
-            result.append(f"{line_counter}| {line}")
+            result.append(f"{line_counter} | {line}")
         else:
             result.append(line)
-            if not line:  # Empty line ends diff section
-                in_diff = False
-
     return '\n'.join(result)
 
-
-def resolve_pending_review(repo_owner, repo_name, pr_number, status):
+def resolve_pending_review(repo_owner, repo_name, pr_number, status, installation_token):
+    
     check_pending = requests.get(
         f"https://api.github.com/repos/{repo_owner}/{repo_name}/pulls/{pr_number}/reviews",
             headers={
-                "Authorization": f"Bearer {_installation_token(owner=repo_owner, repo=repo_name)}",
+                "Authorization": f"Bearer {installation_token}",
             },
         ).json()
     for review in check_pending:
@@ -95,17 +92,17 @@ def resolve_pending_review(repo_owner, repo_name, pr_number, status):
             x = requests.post(
                 f"https://api.github.com/repos/{repo_owner}/{repo_name}/pulls/{pr_number}/reviews/{review["id"]}/events",
                 headers={
-                    "Authorization": f"Bearer {_installation_token(owner=repo_owner, repo=repo_name)}",
+                    "Authorization": f"Bearer {installation_token}",
                 },
                 json={
                     "event": status,
                 }
             ).json()
 
-def get_pr_files(repo_owner, repo_name, number) -> dict:
+def get_pr_files(repo_owner, repo_name, number, installation_token) -> str:
 
     headers={
-        "Authorization": f"Bearer {_installation_token(owner=repo_owner, repo=repo_name)}",
+        "Authorization": f"Bearer {installation_token}",
     }
 
     files = requests.get(
@@ -113,16 +110,17 @@ def get_pr_files(repo_owner, repo_name, number) -> dict:
         headers=headers
     ).json()
     
-    res = {}
+    res = ""
     for f in files:
         path = f["filename"]
-        status = f["status"]
 
         f_content = requests.get(
             url=f"https://api.github.com/repos/{repo_owner}/{repo_name}/contents/{path}",
             headers=headers
         ).json()["content"]
-        res[path] = b64decode(f_content).decode()
+        content = b64decode(f_content).decode()
+
+        res += f"filename: {path}\ncontent:\n{content}\n\n"
     return res
 
 async def handle_pull_request(payload: dict[str, Any]):
@@ -136,11 +134,12 @@ async def handle_pull_request(payload: dict[str, Any]):
         repo_owner = pr["base"]["user"]["login"]
         repo_name = payload["repository"]["name"]
         pr_url = pr["url"]
+        installation_token = _installation_token(owner=repo_owner, repo=repo_name)
 
         diff = requests.get(
             pr_url,
             headers={
-                "Authorization": f"Bearer {_installation_token(owner=repo_owner, repo=repo_name)}",
+                "Authorization": f"Bearer {installation_token}",
                 "Accept": "application/vnd.github.diff"
             },
         ).text
@@ -148,29 +147,31 @@ async def handle_pull_request(payload: dict[str, Any]):
         if diff is None:
             print(f"Diff is empty -> {diff}")
 
+
         diff = format_diff(diff)
 
-        pr_files = get_pr_files(repo_owner=repo_owner, repo_name=repo_name, number=pr_number)
+        pr_files = get_pr_files(repo_owner=repo_owner, repo_name=repo_name, number=pr_number, installation_token=installation_token)
 
 
         context = f"""
 Here's the diff:
 {diff}
 
-Here are the files affected:
+Here's context on the files affected:
 {pr_files}
 
 """
 
         if action in ("reopened", "opened", "synchronize"):
-            review = await call_agent(context)
+            review = await call_agent(diff)
 
             if review:
                 submit_review(
                     data=json.loads(review),
                     owner=repo_owner,
                     repo=repo_name,
-                    pull_number=pr_number
+                    pull_number=pr_number,
+                    installation_token=installation_token
                 )
             else:
                 print(f"No review was created -> {review}")
