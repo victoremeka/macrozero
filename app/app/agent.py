@@ -1,5 +1,5 @@
 from typing import Literal
-from google.adk.agents import LlmAgent
+from google.adk.agents import LlmAgent, SequentialAgent
 from google.adk.models.lite_llm import LiteLlm
 from google.adk.runners import Runner
 from google.adk.sessions import InMemorySessionService, DatabaseSessionService
@@ -19,12 +19,11 @@ class CodeReview(BaseModel):
     event: Literal["APPROVE", "REQUEST_CHANGES", "COMMENT"] = Field(description="The review action")
     comments: list[ReviewComment] = Field(description="List of review comments")
 
-
 agent = LlmAgent(
-    model=LiteLlm(model="gemini/gemini-2.5-flash"), # LiteLLM model string format
+    model=LiteLlm(model="gemini/gemini-2.5-flash"),
     name="code_review_agent",
     instruction=base_prompt,
-    output_schema=CodeReview,
+    output_schema=CodeReview
 )
 
 APP_NAME = "macrozeroai"

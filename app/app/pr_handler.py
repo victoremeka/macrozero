@@ -50,21 +50,21 @@ def submit_review(data : dict, owner, repo, pull_number, installation_token):
         print(review.content)
         print(review.headers)
 
-
 def format_diff(diff: str):
     lines = diff.split('\n')
     result = []
     line_counter = 0
     in_diff = False
-
-    for i, line in enumerate(lines):
-
+    hunk_start = False
+    for line in lines:
         if line.startswith('diff --git'):
             in_diff = False
-        elif line.startswith("@@"):
             line_counter = 0
+            hunk_start = False
+        elif line.startswith("@@") and not hunk_start:
             in_diff = True
             result.append(line)
+            hunk_start = True
             continue
 
         if not in_diff:
@@ -72,16 +72,12 @@ def format_diff(diff: str):
             continue
         
 
-        if in_diff and line:
+        if in_diff:
             line_counter += 1
-            result.append(f"{line_counter}| {line}")
+            result.append(f"{line_counter} | {line}")
         else:
             result.append(line)
-            if not line:  # Empty line ends diff section
-                in_diff = False
-
     return '\n'.join(result)
-
 
 def resolve_pending_review(repo_owner, repo_name, pr_number, status, installation_token):
     
@@ -103,7 +99,7 @@ def resolve_pending_review(repo_owner, repo_name, pr_number, status, installatio
                 }
             ).json()
 
-def get_pr_files(repo_owner, repo_name, number, installation_token) -> dict:
+def get_pr_files(repo_owner, repo_name, number, installation_token) -> str:
 
     headers={
         "Authorization": f"Bearer {installation_token}",
@@ -114,16 +110,17 @@ def get_pr_files(repo_owner, repo_name, number, installation_token) -> dict:
         headers=headers
     ).json()
     
-    res = {}
+    res = ""
     for f in files:
         path = f["filename"]
-        status = f["status"]
 
         f_content = requests.get(
             url=f"https://api.github.com/repos/{repo_owner}/{repo_name}/contents/{path}",
             headers=headers
         ).json()["content"]
-        res[path] = b64decode(f_content).decode()
+        content = b64decode(f_content).decode()
+
+        res += f"filename: {path}\ncontent:\n{content}\n\n"
     return res
 
 async def handle_pull_request(payload: dict[str, Any]):
@@ -150,6 +147,7 @@ async def handle_pull_request(payload: dict[str, Any]):
         if diff is None:
             print(f"Diff is empty -> {diff}")
 
+
         diff = format_diff(diff)
 
         pr_files = get_pr_files(repo_owner=repo_owner, repo_name=repo_name, number=pr_number, installation_token=installation_token)
@@ -159,14 +157,13 @@ async def handle_pull_request(payload: dict[str, Any]):
 Here's the diff:
 {diff}
 
-Here are the files affected:
+Here's context on the files affected:
 {pr_files}
 
 """
-        dump_to_json(context, "context", is_json=False)
 
         if action in ("reopened", "opened", "synchronize"):
-            review = await call_agent(context)
+            review = await call_agent(diff)
 
             if review:
                 submit_review(
