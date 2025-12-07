@@ -153,12 +153,12 @@ async def handle_pull_request(payload: dict[str, Any]):
         pr_files = get_pr_files(repo_owner=repo_owner, repo_name=repo_name, number=pr_number, installation_token=installation_token)
 
 
-        context = f"""
-Here's the diff:
-{diff}
+#         context = f"""
+# Here's the diff:
+# {diff}
 
-Here's context on the files affected:
-{pr_files}
+# Here's context on the files affected:
+# {pr_files}
 
 """
 
