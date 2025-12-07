@@ -160,7 +160,7 @@ async def handle_pull_request(payload: dict[str, Any]):
 # Here's context on the files affected:
 # {pr_files}
 
-"""
+# """
 
         if action in ("reopened", "opened", "synchronize"):
             review = await call_agent(diff)
