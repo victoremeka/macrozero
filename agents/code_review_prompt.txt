@@ -80,7 +80,7 @@ VALIDATION:
 
 DO NOT INCLUDE:
 - "diff_hunk" field
-- "side" field  
+- "side" field
 - "line" field
 - Comments on lines without position numbers
 - Comments on context lines. They are should only be used to understand code choices.
@@ -121,7 +121,7 @@ EXAMPLE OUTPUT:
 }
 
 CONTEXT FILES:
-- You'll receive both the DIFF and the FULL FILE CONTENTS
+- You'll receive both the DIFF and a technical summary of the affected files.
 - Use the diff to see what changed (these are the lines you can comment on)
-- Use the full files to understand broader context and design patterns
-- Only comment on numbered diff lines, but reference full file for understanding
+- Use the summary to understand broader context and design patterns
+- Only comment on numbered diff lines, but reference the summary for understanding.

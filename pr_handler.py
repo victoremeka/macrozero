@@ -9,7 +9,7 @@ from integrations.github_client import _installation_token
 from base64 import b64decode
 
 
-from .agent import call_agent
+from agents.agent import call_agent
 
 
 APP_TAG = r"@macrozeroai" # for v2 (mentions)
@@ -70,7 +70,7 @@ def format_diff(diff: str):
         if not in_diff:
             result.append(line)
             continue
-        
+
 
         if in_diff:
             line_counter += 1
@@ -80,7 +80,7 @@ def format_diff(diff: str):
     return '\n'.join(result)
 
 def resolve_pending_review(repo_owner, repo_name, pr_number, status, installation_token):
-    
+
     check_pending = requests.get(
         f"https://api.github.com/repos/{repo_owner}/{repo_name}/pulls/{pr_number}/reviews",
             headers={
@@ -109,7 +109,7 @@ def get_pr_files(repo_owner, repo_name, number, installation_token) -> str:
         url=f" https://api.github.com/repos/{repo_owner}/{repo_name}/pulls/{number}/files",
         headers=headers
     ).json()
-    
+
     res = ""
     for f in files:
         path = f["filename"]
@@ -153,12 +153,12 @@ async def handle_pull_request(payload: dict[str, Any]):
         pr_files = get_pr_files(repo_owner=repo_owner, repo_name=repo_name, number=pr_number, installation_token=installation_token)
 
 
-        context = f"""
-Here's the diff:
-{diff}
+#         context = f"""
+# Here's the diff:
+# {diff}
 
-Here's context on the files affected:
-{pr_files}
+# Here's context on the files affected:
+# {pr_files}
 
 """
 

@@ -1,8 +1,9 @@
-import hmac, hashlib
+import hmac
+import hashlib
 from typing import Any
 from fastapi import HTTPException, Request
 from integrations.github_client import (WEBHOOK_SECRET)
-from app.pr_handler import handle_pull_request
+from pr_handler import handle_pull_request
 
 
 APP_NAME = "macrozero"

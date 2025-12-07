@@ -6,7 +6,7 @@ from google.adk.sessions import InMemorySessionService, DatabaseSessionService
 from google.genai import types
 from pydantic import BaseModel, Field
 
-with open("app/code_review_prompt.txt", "r", encoding="utf-8") as f:
+with open("agents/code_review_prompt.txt", "r", encoding="utf-8") as f:
     base_prompt = f.read()
 
 class ReviewComment(BaseModel):

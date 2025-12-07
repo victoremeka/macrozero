@@ -14,7 +14,7 @@ from models import (
     Issue,
     IssueFile
 )
-from pytidb import TiDBClient
+# from pytidb import TiDBClient
 
 dotenv.load_dotenv()
 
@@ -85,12 +85,12 @@ def upsert_repo(session: Session, gh_id: int, owner: str) -> Repository:
         repo.owner = owner
     else:
         repo =  Repository(owner=owner,gh_id=gh_id)
-    
+
     session.add(repo)
     session.flush()
     session.refresh(repo)
     return repo
-    
+
 def upsert_pr(session: Session, repo: Repository, number: int, state: PRState, text: str, embedding: list[float], head_branch: str, base_branch: str) -> PullRequest:
     pr = session.exec(select(PullRequest).where(PullRequest.repo_id == repo.id, PullRequest.number == number)).one_or_none()
     if pr:
@@ -99,10 +99,10 @@ def upsert_pr(session: Session, repo: Repository, number: int, state: PRState, t
         pr.embedding = embedding
         pr.head_branch = head_branch
         pr.base_branch = base_branch
-        
+
     else:
         pr = PullRequest(repo_id=repo.id, number=number, state=state, text=text, embedding=embedding, head_branch=head_branch, base_branch=base_branch)
-    
+
     session.add(pr)
     session.flush()
     session.refresh(pr)
@@ -191,7 +191,7 @@ def upsert_issue(session: Session, repo: Repository, number: int, state: IssueSt
     session.flush()
     session.refresh(issue)
     return issue
-    
+
 def link_issue_file(session: Session, issue: Issue, file_path: str, increment: int = 1) -> IssueFile:
     link = session.get(IssueFile, (issue.id, file_path))
     if link:
