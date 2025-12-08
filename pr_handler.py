@@ -9,7 +9,7 @@ from integrations.github_client import _installation_token
 from base64 import b64decode
 
 
-from agents.agent import call_agent
+from agents.agents import review_pr
 
 
 APP_TAG = r"@macrozeroai" # for v2 (mentions)
@@ -23,7 +23,7 @@ def dump_to_json(payload, name, is_json=True):
         with open(f"payloads/{name}.json", "w", encoding="utf-8") as file:
             json.dump(payload, fp=file, indent=2)
     else:
-        with open(f"{name}.txt", "w", encoding="utf-8") as f:
+        with open(f"payloads/{name}.txt", "w", encoding="utf-8") as f:
             f.write(payload)
 
 def embed(str:str):
@@ -43,7 +43,7 @@ def submit_review(data : dict, owner, repo, pull_number, installation_token):
         "Accept": "application/vnd.github+json",
         "Authorization" :f"Bearer {installation_token}",
         },
-        json = data
+        json=data
     )
     if not review.ok:
         print(f"{review.status_code} : review could not be submitted")
@@ -117,8 +117,9 @@ def get_pr_files(repo_owner, repo_name, number, installation_token) -> str:
         f_content = requests.get(
             url=f"https://api.github.com/repos/{repo_owner}/{repo_name}/contents/{path}",
             headers=headers
-        ).json()["content"]
-        content = b64decode(f_content).decode()
+        ).json().get("content")
+
+        content = b64decode(f_content).decode() if f_content else "no content"
 
         res += f"filename: {path}\ncontent:\n{content}\n\n"
     return res
@@ -152,18 +153,11 @@ async def handle_pull_request(payload: dict[str, Any]):
 
         pr_files = get_pr_files(repo_owner=repo_owner, repo_name=repo_name, number=pr_number, installation_token=installation_token)
 
-
-#         context = f"""
-# Here's the diff:
-# {diff}
-
-# Here's context on the files affected:
-# {pr_files}
-
-# """
-
         if action in ("reopened", "opened", "synchronize"):
-            review = await call_agent(diff)
+            review = await review_pr(
+                pr_files=pr_files,
+                diff=diff
+            )
 
             if review:
                 submit_review(
