@@ -212,10 +212,6 @@ __marimo__/
 # Streamlit
 .streamlit/secrets.toml
 
-# Testing
-test/
-
-
 # Payloads
 payloads/
 *diff.txt
