@@ -36,14 +36,6 @@ reviewer_agent = LlmAgent(
     output_schema=CodeReview
 )
 
-agent = SequentialAgent(
-    name="orchestrator_agent",
-    sub_agents=[
-        summarizer_agent,
-        reviewer_agent,
-    ]
-)
-
 APP_NAME = "macrozeroai"
 USER_ID = "local123"
 SESSION_ID = "session123"
