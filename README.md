@@ -1,24 +1,13 @@
 # Macrozero
 AI code reviews that actually understand your codebase.
 
-## What is this?
-A GitHub App that reviews your pull requests. Not the generic "consider adding tests" kind—actual specific feedback tied to your code.
-
 Model agnostic. Codebase aware. Built for OSS.
-
-## How it works
-1. You open a PR
-2. Macrozero fetches the diff
-3. AI agents analyze it (reviewer → packager → submitter)
-4. You get inline comments on specific lines, plus an overall review
-5. It auto-decides whether to approve, comment, or request changes
 
 ## Setup
 
 Prerequisites: Python 3.13+, [uv](https://docs.astral.sh/uv/), a GitHub App, Gemini API key.
 
 ```bash
-cd app
 uv sync
 cp .env.example .env  # fill in your keys
 uv run uvicorn server:app --reload --host 0.0.0.0 --port 8000
@@ -33,7 +22,6 @@ uv run uvicorn server:app --reload --host 0.0.0.0 --port 8000
 ### Environment variables
 ```
 GITHUB_APP_ID=...
-GITHUB_INSTALLATION_ID=...
 GITHUB_WEBHOOK_SECRET=...
 GITHUB_PRIVATE_KEY=...
 GEMINI_API_KEY=...
@@ -46,12 +34,6 @@ GEMINI_API_KEY=...
 - Multi-agent system: one reviews, one packages, one researches
 - Webhook signature verification (secure by default)
 
-## Architecture
-Two pieces:
-- **`/app`**: FastAPI + Google ADK agents. Does the actual review work.
-- **`/pr-handler`**: Go webhook router. Lightweight queue handler.
-
-Run commands from `app/` so imports resolve.
 
 ## Docker
 ```bash

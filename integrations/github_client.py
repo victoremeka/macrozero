@@ -1,9 +1,7 @@
 import os
 import time
 import requests
-from requests.auth import HTTPBasicAuth
 import jwt
-from typing import Any, Dict, Iterable, Optional
 import dotenv
 
 
