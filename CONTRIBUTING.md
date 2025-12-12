@@ -4,7 +4,7 @@ Thanks for wanting to contribute. Here's how to get started.
 
 ## Dev setup
 
-Prerequisites: Python 3.13+, [uv](https://docs.astral.sh/uv/).
+Prerequisites: Python 3.13+, [uv](https://docs.astral.sh/uv/), a GitHub App, Gemini API key.
 
 ```bash
 git clone https://github.com/yourusername/macrozero.git
@@ -29,13 +29,10 @@ uv run uvicorn server:app --reload --host 0.0.0.0 --port 8000
 
 You'll need a GitHub App to test webhooks locally.
 
-1. Go to GitHub Settings → Developer settings → GitHub Apps → New GitHub App
-2. Enable these events: pull requests, issues, pull request reviews
-3. Set webhook URL to `https://<your-ngrok-or-local-tunnel>/listen`
-4. Generate a webhook secret, use it for `GITHUB_WEBHOOK_SECRET`
-5. After creating, note the App ID → `GITHUB_APP_ID`
-6. Generate a private key, save it, set path in `GITHUB_PRIVATE_KEY`
-7. Install the app on a test repo, grab the installation ID from the URL
+1. Create an App, enable pull request + issue events, set webhook to `https://<your-domain>/listen`
+2. Use the same secret for the App and `GITHUB_WEBHOOK_SECRET`
+3. Install the App, grab the installation ID
+4. Drop your private key in the env
 
 For local testing, use [ngrok](https://ngrok.com/) or similar to expose port 8000.
 
