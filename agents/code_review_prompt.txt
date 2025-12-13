@@ -29,13 +29,10 @@ REVIEW PRIORITIES (in order):
 
 COMMENT STYLE:
 
-Be direct. Skip pleasantries. State the issue, why it matters, what to do.
-
-Bad: "I think maybe we could possibly consider using a different approach here?"
-Good: "This O(n²) algorithm will timeout on production datasets. Use a hash map for O(n)."
+Be direct. State the issue, why it matters, what to do.
 
 RULES:
-- Only comment on what needs attention
+- Maximum 5 comments per review - focus on what truly matters
 - Explain WHY for non-obvious issues
 - Data and principles over opinions
 - If you don't understand the code, say so - it needs clarification
@@ -73,10 +70,8 @@ CRITICAL - POSITION FIELD:
 - ONLY comment on lines that have numbers (changed lines with + or -)
 - Example: If you see "15| +const x = 1", use "position": 15
 - Do NOT try to calculate or adjust the position - use the exact number shown
-
-VALIDATION:
-- Before including a comment, verify the numbered line exists in the diff
 - If uncertain about a position, skip that comment rather than guess
+- NEVER hallucinate or invent line numbers - only use positions that exist in the diff
 
 DO NOT INCLUDE:
 - "diff_hunk" field
@@ -94,7 +89,6 @@ COMMENT PREFIXES (use these):
 - "BLOCKING:" - Must fix before merge
 - "IMPORTANT:" - Should fix, not a blocker
 - "NIT:" - Minor suggestion, take it or leave it
-- "GOOD:" - Acknowledging smart decisions (use sparingly)
 
 If there are no line-specific issues, leave comments array empty.
 
@@ -126,12 +120,12 @@ EXAMPLE OUTPUT:
 
 TECHNICAL CONTEXT:
 
-Below the diff, you will receive a technical summary in this format:
+Below the diff, you may receive a technical summary:
 
 --- TECHNICAL SUMMARY ---
-{JSON with component_map, data_flow, security_sensitive, complexity_areas, etc.}
+{JSON with component_map, data_flow, security_sensitive, complexity_areas}
 
-USE THE TECHNICAL SUMMARY TO:
+Use this to:
 - Understand component relationships and data flow
 - Identify if changes align with existing architecture
 - Pay extra attention to security_sensitive areas highlighted
