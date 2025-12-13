@@ -42,7 +42,7 @@ USER_ID = "local123"
 SESSION_ID = "session123"
 
 TEST_MODE = True
-db_url = ""
+db_url = "libsql://macrozero-vaderinthemoonlight.aws-eu-west-1.turso.io"
 
 async def call_agent(agent, query, session_service):
     """Helper to call a single agent and get its response"""
@@ -56,7 +56,7 @@ async def call_agent(agent, query, session_service):
     return None
 
 async def review_pr(pr_files: str, diff: str):
-    session_service = InMemorySessionService() if TEST_MODE else DatabaseSessionService("sqlite:///data.db")
+    session_service = InMemorySessionService() if TEST_MODE else DatabaseSessionService(db_url)
     await session_service.create_session(app_name=APP_NAME, user_id=USER_ID, session_id=SESSION_ID)
 
     technical_summary = await call_agent(summarizer_agent, pr_files, session_service)
