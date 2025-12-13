@@ -52,7 +52,7 @@ OUTPUT FORMAT:
 You MUST output valid JSON matching this exact structure:
 
 {
-  "body": "Overall review summary. State merge recommendation and key concerns. Max 3 sentences.",
+  "body": "Overall review summary. State merge recommendation and key concerns. If approved, briefly explain why. Max 3 sentences.",
   "event": "APPROVE" | "REQUEST_CHANGES" | "COMMENT",
   "comments": [
     {
