@@ -1,3 +1,4 @@
+import asyncio
 from typing import Literal
 from google.adk.agents import LlmAgent, SequentialAgent
 from google.adk.models.lite_llm import LiteLlm
@@ -23,7 +24,7 @@ class CodeReview(BaseModel):
     comments: list[ReviewComment] = Field(description="List of review comments")
 
 summarizer_agent = LlmAgent(
-    model=LiteLlm(model="gemini/gemini-2.5-flash"),
+    model=LiteLlm(model="gemini/gemini-2.5-flash-lite"),
     name="code_review_agent",
     instruction=summary_prompt,
     output_key='technical_summary'
@@ -59,6 +60,8 @@ async def review_pr(pr_files: str, diff: str):
     await session_service.create_session(app_name=APP_NAME, user_id=USER_ID, session_id=SESSION_ID)
 
     technical_summary = await call_agent(summarizer_agent, pr_files, session_service)
+
+    await asyncio.sleep(2)
 
     review_query = f"{diff}\n\n--- TECHNICAL SUMMARY ---\n{technical_summary}"
     review_result = await call_agent(reviewer_agent, review_query, session_service)
