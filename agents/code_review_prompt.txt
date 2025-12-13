@@ -66,8 +66,10 @@ You MUST output valid JSON matching this exact structure:
 CRITICAL - POSITION FIELD:
 - The diff shows numbered lines like "1| +code here", "2|  context", "3| -removed"
 - Use EXACTLY the number shown before the pipe (|) as the "position" value
+- These numbers start from 1 after each @@ hunk header in the diff
 - ONLY comment on lines that have numbers (changed lines with + or -)
 - Example: If you see "15| +const x = 1", use "position": 15
+- Do NOT try to calculate or adjust the position - use the exact number shown
 - If uncertain about a position, skip that comment rather than guess
 - NEVER hallucinate or invent line numbers - only use positions that exist in the diff
 
