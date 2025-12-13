@@ -69,6 +69,7 @@ CRITICAL - POSITION FIELD:
 - ONLY comment on lines that have numbers (changed lines with + or -)
 - Example: If you see "15| +const x = 1", use "position": 15
 - If uncertain about a position, skip that comment rather than guess
+- NEVER hallucinate or invent line numbers - only use positions that exist in the diff
 
 DO NOT INCLUDE:
 - "diff_hunk" field
@@ -86,7 +87,6 @@ COMMENT PREFIXES (use these):
 - "BLOCKING:" - Must fix before merge
 - "IMPORTANT:" - Should fix, not a blocker
 - "NIT:" - Minor suggestion, take it or leave it
-- "GOOD:" - Acknowledging smart decisions (use sparingly)
 
 If there are no line-specific issues, leave comments array empty.
 
