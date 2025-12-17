@@ -1,5 +1,4 @@
 import asyncio
-from site import USER_BASE
 from typing import Literal
 from google.adk.agents import LlmAgent, SequentialAgent
 from google.adk.models.lite_llm import LiteLlm
@@ -43,9 +42,8 @@ reviewer_agent = LlmAgent(
 )
 
 APP_NAME = "macrozeroai"
-SESSION_ID = "session123"
 
-TEST_MODE = False
+TEST_MODE = os.getenv("TEST_MODE")
 DATABASE_URL = os.getenv("DB_URL")
 DATABASE_PASSWORD = os.getenv("DB_PASSWORD")
 
@@ -55,7 +53,7 @@ async def call_agent(agent, query, session_service, app_name, user_id, session_i
     """Helper to call a single agent and get its response"""
     runner = Runner(agent=agent, app_name=app_name, session_service=session_service)
     content = types.Content(role='user', parts=[types.Part(text=query)])
-    events = runner.run(user_id=user_id, session_id=SESSION_ID, new_message=content)
+    events = runner.run(user_id=user_id, session_id=session_id, new_message=content)
 
     for event in events:
         if event.is_final_response() and event.content:
@@ -63,8 +61,8 @@ async def call_agent(agent, query, session_service, app_name, user_id, session_i
     return None
 
 async def review_pr(pr_files: str, diff: str, user_id: str):
-    session_service = InMemorySessionService() if TEST_MODE else DatabaseSessionService(db_url)
-    session = await session_service.create_session(app_name=APP_NAME, user_id=user_id, session_id=SESSION_ID)
+    session_service = InMemorySessionService() if TEST_MODE else DatabaseSessionService(DATABASE_URL)
+    session = await session_service.create_session(app_name=APP_NAME, user_id=user_id)
     technical_summary = await call_agent(summarizer_agent, pr_files, session_service, app_name=APP_NAME, user_id=user_id, session_id=session.id)
 
     review_query = f"{diff}\n\n--- TECHNICAL SUMMARY ---\n{technical_summary}"

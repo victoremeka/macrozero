@@ -156,7 +156,8 @@ async def handle_pull_request(payload: dict[str, Any]):
         if action in ("reopened", "opened", "synchronize"):
             review = await review_pr(
                 pr_files=pr_files,
-                diff=diff
+                diff=diff,
+                user_id=payload["sender"]["login"]
             )
 
             if review:
