@@ -2,7 +2,7 @@ import hmac
 import hashlib
 from typing import Any
 from fastapi import HTTPException, Request
-from integrations.github_client import (WEBHOOK_SECRET)
+from integrations.github_client import GITHUB_WEBHOOK_SECRET
 from pr_handler import handle_pull_request
 
 
@@ -11,9 +11,9 @@ APP_NAME = "macrozero"
 def verify_signature(raw: bytes, sig_header: str | None):
     if not sig_header:
         raise HTTPException(403, "Missing X-Hub-Signature-256")
-    if not WEBHOOK_SECRET:
+    if not GITHUB_WEBHOOK_SECRET:
         raise HTTPException(500, "Webhook secret not configured")
-    expected = "sha256=" + hmac.new(WEBHOOK_SECRET.encode(), raw, hashlib.sha256).hexdigest()
+    expected = "sha256=" + hmac.new(GITHUB_WEBHOOK_SECRET.encode(), raw, hashlib.sha256).hexdigest()
     if not hmac.compare_digest(expected, sig_header):
         raise HTTPException(403, "Bad signature")
 
