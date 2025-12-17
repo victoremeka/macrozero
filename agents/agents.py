@@ -1,8 +1,7 @@
-import asyncio
 from typing import Literal
 from google.adk.agents import LlmAgent, SequentialAgent
 from google.adk.models.lite_llm import LiteLlm
-from google.adk.runners import Runner
+from google.adk.runners import InMemoryRunner, Runner
 from google.adk.sessions import InMemorySessionService, DatabaseSessionService
 from google.genai import types
 from pydantic import BaseModel, Field
@@ -43,11 +42,8 @@ reviewer_agent = LlmAgent(
 
 APP_NAME = "macrozeroai"
 
-TEST_MODE = os.getenv("TEST_MODE")
 DATABASE_URL = os.getenv("DB_URL")
 DATABASE_PASSWORD = os.getenv("DB_PASSWORD")
-
-db_url = f"{DATABASE_URL}?authToken={DATABASE_PASSWORD}"
 
 async def call_agent(agent, query, session_service, app_name, user_id, session_id):
     """Helper to call a single agent and get its response"""
@@ -61,7 +57,7 @@ async def call_agent(agent, query, session_service, app_name, user_id, session_i
     return None
 
 async def review_pr(pr_files: str, diff: str, user_id: str):
-    session_service = InMemorySessionService() if TEST_MODE else DatabaseSessionService(DATABASE_URL)
+    session_service = DatabaseSessionService(DATABASE_URL) if DATABASE_URL else InMemorySessionService()
     session = await session_service.create_session(app_name=APP_NAME, user_id=user_id)
     technical_summary = await call_agent(summarizer_agent, pr_files, session_service, app_name=APP_NAME, user_id=user_id, session_id=session.id)
 
