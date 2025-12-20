@@ -1,5 +1,5 @@
 import json
-from fastapi import FastAPI, Request, Response
+from fastapi import FastAPI, Request
 from github_webhook import handle_webhook_payload
 # import logging
 
@@ -13,4 +13,4 @@ async def listener(request: Request):
 
 @app.get("/health")
 async def health_check():
-    return Response(json.dumps({"status": "ok"}))
+    return {"status": "ok"}
