@@ -11,5 +11,5 @@ async def listener(request: Request):
     await handle_webhook_payload(request)
 
 @app.get("/health")
-async def health_check(request: Request):
+async def health_check():
     return Response({"status": "ok"})
