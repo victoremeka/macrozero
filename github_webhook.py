@@ -32,4 +32,4 @@ async def handle_webhook_payload(request: Request):
     print("event ->", event, " action ->", payload.get("action"))
 
     if event == "pull_request":
-        await handle_pull_request(payload)
+        handle_pull_request(payload)

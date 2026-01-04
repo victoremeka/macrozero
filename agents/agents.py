@@ -7,6 +7,7 @@ from google.genai import types
 from pydantic import BaseModel, Field
 import dotenv
 import os
+import asyncio
 
 dotenv.load_dotenv()
 
@@ -55,7 +56,8 @@ async def call_agent(agent, query, session_service, app_name, user_id, session_i
             return event.content.parts[0].text.strip()
     return None
 
-async def review_pr(pr_files: str, diff: str, user_id: str):
+
+async def _review_pr_async(pr_files: str, diff: str, user_id: str):
     session_service = DatabaseSessionService(DATABASE_URL) if DATABASE_URL else InMemorySessionService()
     session = await session_service.create_session(app_name=APP_NAME, user_id=user_id)
     technical_summary = await call_agent(summarizer_agent, pr_files, session_service, app_name=APP_NAME, user_id=user_id, session_id=session.id)
@@ -64,3 +66,6 @@ async def review_pr(pr_files: str, diff: str, user_id: str):
     review_result = await call_agent(reviewer_agent, review_query, session_service, app_name=APP_NAME, user_id=user_id, session_id=session.id)
 
     return review_result
+
+def review_pr(pr_files: str, diff: str, user_id: str):
+    return asyncio.run(_review_pr_async(pr_files, diff, user_id))

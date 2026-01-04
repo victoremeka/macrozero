@@ -5,11 +5,14 @@ from typing import Any
 from google import genai
 from google.genai import types
 import requests
+from rq import Queue
 from integrations.github_client import _installation_token
 from base64 import b64decode
 
 
 from agents.agents import review_pr
+
+from router.handler import q, r_conn
 
 
 APP_TAG = r"@macrozeroai" # for v2 (mentions)
@@ -36,19 +39,24 @@ def embed(str:str):
     if embeddings:
         return embeddings[0].values
 
-def submit_review(data : dict, owner, repo, pull_number, installation_token):
-    review = requests.post(
-        url=f"https://api.github.com/repos/{owner}/{repo}/pulls/{pull_number}/reviews",
-        headers={
-        "Accept": "application/vnd.github+json",
-        "Authorization" :f"Bearer {installation_token}",
-        },
-        json=data
-    )
-    if not review.ok:
-        print(f"{review.status_code} : review could not be submitted")
-        print(review.content)
-        print(review.headers)
+def submit_review(review_job_id, owner, repo, pull_number):
+    review_job = Queue.fetch_job(q, review_job_id)
+    installation_token = _installation_token(owner, repo)
+
+    if review_job and review_job.result:
+        data = json.loads(review_job.result)
+        review = requests.post(
+            url=f"https://api.github.com/repos/{owner}/{repo}/pulls/{pull_number}/reviews",
+            headers={
+            "Accept": "application/vnd.github+json",
+            "Authorization" :f"Bearer {installation_token}",
+            },
+            json=data
+        )
+        if not review.ok:
+            print(f"{review.status_code} : review could not be submitted")
+            print(review.content)
+            print(review.headers)
 
 def format_diff(diff: str):
     lines = diff.split('\n')
@@ -124,7 +132,7 @@ def get_pr_files(repo_owner, repo_name, number, installation_token) -> str:
         res += f"filename: {path}\ncontent:\n{content}\n\n"
     return res
 
-async def handle_pull_request(payload: dict[str, Any]):
+def handle_pull_request(payload: dict[str, Any]):
 
     pr = payload.get("pull_request")
 
@@ -135,6 +143,7 @@ async def handle_pull_request(payload: dict[str, Any]):
         repo_owner = pr["base"]["user"]["login"]
         repo_name = payload["repository"]["name"]
         pr_url = pr["url"]
+        user_id = payload["sender"]["login"]
         installation_token = _installation_token(owner=repo_owner, repo=repo_name)
 
         diff = requests.get(
@@ -154,19 +163,16 @@ async def handle_pull_request(payload: dict[str, Any]):
         pr_files = get_pr_files(repo_owner=repo_owner, repo_name=repo_name, number=pr_number, installation_token=installation_token)
 
         if action in ("reopened", "opened", "synchronize"):
-            review = await review_pr(
-                pr_files=pr_files,
-                diff=diff,
-                user_id=payload["sender"]["login"]
-            )
+            review_job = q.enqueue(review_pr, pr_files=pr_files, diff=diff, user_id=user_id)
 
-            if review:
-                submit_review(
-                    data=json.loads(review),
-                    owner=repo_owner,
-                    repo=repo_name,
-                    pull_number=pr_number,
-                    installation_token=installation_token
-                )
-            else:
-                print(f"No review was created -> {review}")
+            q.enqueue(
+                submit_review,
+
+                review_job_id=review_job.id,
+                owner=repo_owner,
+                repo=repo_name,
+                pull_number=pr_number,
+                depends_on=review_job
+            )
+            
+            return {"status": "accepted", "job_id": review_job.id}, 202
