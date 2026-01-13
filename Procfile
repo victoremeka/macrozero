@@ -1,2 +1,2 @@
-web: uvicorn server:app --host 0.0.0.0 --port $PORT
+web: gunicorn server:app --worker-class uvicorn.workers.UvicornWorker --bind 0.0.0.0:$PORT --workers 1 --preload
 worker: python -u -m app.router.worker
