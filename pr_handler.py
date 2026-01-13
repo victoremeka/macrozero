@@ -143,6 +143,7 @@ def handle_pull_request(payload: dict[str, Any]):
         repo_owner = pr["base"]["user"]["login"]
         repo_name = payload["repository"]["name"]
         pr_url = pr["url"]
+        pr_id = pr["id"]
         user_id = payload["sender"]["login"]
         installation_token = _installation_token(owner=repo_owner, repo=repo_name)
 
@@ -174,5 +175,17 @@ def handle_pull_request(payload: dict[str, Any]):
                 pull_number=pr_number,
                 depends_on=review_job
             )
-            
+
+            # acknowledge pr with a reaction
+            requests.post(
+                url=f"https://api.github.com/repos/{repo_owner}/{repo_name}/issues/{pr_id}/reactions",
+                headers={
+                    "Authorization": f"Bearer {installation_token}",
+                },
+                json={
+                    "content":"+1"
+                }
+            )
+
+
             return {"status": "accepted", "job_id": review_job.id}, 202
