@@ -20,4 +20,6 @@ dependencies = [
     "psycopg2-binary>=2.9.11",
     "redis>=7.1.0",
     "rq>=2.6.1",
+    "gunicorn>=23.0.0",
+    "uvicorn-worker>=0.3.0",
 ]
